@@ -1,31 +1,40 @@
 package bot
 
 import (
+	"bot-demo/handler"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 )
 
-var (
-	BotToken         string
-	OpenWeatherToken string
-)
-
+// Run bot running
 func Run() {
 	// Create new Discord Session
-	discord, err := discordgo.New("Bot " + BotToken)
+	discord, err := discordgo.New("Bot " + os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// add proxy if exist
+	if os.Getenv("ENV") == "dev" {
+		discord.Dialer.Proxy = func(request *http.Request) (*url.URL, error) {
+			u, _ := url.Parse("http://127.0.0.1:7890")
+			return u, nil
+		}
+	}
+
 	// Add event handler
-	discord.AddHandler(newMessage)
+	handler.AddAllHandlers(discord)
 
 	// Open session
-	discord.Open()
+	err = discord.Open()
+	if err != nil {
+		log.Fatal("Cannot open Discord session: ", err)
+	}
 	defer discord.Close()
 
 	// Run until code is terminated
@@ -33,21 +42,4 @@ func Run() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
-}
-
-// newMessage 第二个参数是侦听的事件类型
-func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
-
-	// Ignore bot messaage
-	if message.Author.ID == discord.State.User.ID {
-		return
-	}
-
-	// Respond to messages
-	switch {
-	case strings.Contains(message.Content, "weather"):
-		discord.ChannelMessageSend(message.ChannelID, "I can help with that!")
-	case strings.Contains(message.Content, "bot"):
-		discord.ChannelMessageSend(message.ChannelID, "Hi there!")
-	}
 }
