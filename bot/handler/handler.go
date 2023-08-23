@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"gangbu/util"
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"strings"
@@ -10,7 +11,11 @@ import (
 func AddAllHandlers(session *discordgo.Session) {
 	session.AddHandler(newMessage)
 	// todo
-	session.AddHandler(TestPlay)
+	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
 }
 
 // newMessage 第二个参数是侦听的事件类型
@@ -46,20 +51,98 @@ func TestPlay(discord *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type != discordgo.InteractionApplicationCommand {
 		return
 	}
+	discord.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "Hey there! Congratulations, you just executed your first slash command",
+		},
+	})
 
-	data := i.ApplicationCommandData()
-	switch data.Name {
-	case "play":
-		// Do something
-		// discord.ChannelMessageSend(i.ChannelID, "那我来帮帮你!")
-		embed := &discordgo.MessageEmbed{
-			Title:       "那我来帮帮你",
-			Description: "测试描述",
-		}
+}
 
-		_, err := discord.ChannelMessageSendEmbed(i.ChannelID, embed)
+var (
+	commands = []*discordgo.ApplicationCommand{
+		{
+			Name:        "play",
+			Description: "Basic command",
+		},
+	}
+	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Huh. I see, maybe some of these resources might help you?",
+					Flags:   discordgo.MessageFlagsEphemeral,
+					Components: []discordgo.MessageComponent{
+						discordgo.ActionsRow{
+							Components: []discordgo.MessageComponent{
+								discordgo.Button{
+									Emoji: discordgo.ComponentEmoji{
+										Name: "📜",
+									},
+									Label: "Documentation",
+									Style: discordgo.PrimaryButton,
+									URL:   "https://discord.com/developers/docs/interactions/message-components#buttons",
+								},
+								discordgo.Button{
+									Emoji: discordgo.ComponentEmoji{
+										Name: "🔧",
+									},
+									Label: "Discord developers",
+									Style: discordgo.LinkButton,
+									URL:   "https://discord.gg/discord-developers",
+								},
+								discordgo.Button{
+									Emoji: discordgo.ComponentEmoji{
+										Name: "🦫",
+									},
+									Label: "Discord Gophers",
+									Style: discordgo.LinkButton,
+									URL:   "https://discord.gg/7RuRrVHyXF",
+								},
+								discordgo.TextInput{
+
+									Label:    "Discord Gophers",
+									Style:    1,
+									Required: true,
+								},
+							},
+						},
+					},
+				},
+			})
+		},
+		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+		},
+		"history": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+		},
+		"withdraw": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+		},
+	}
+)
+
+func installCommands() {
+	s := util.GetDiscordClient()
+	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	})
+	err := s.Open()
+	if err != nil {
+		log.Fatalf("Cannot open the session: %v", err)
+	}
+
+	log.Println("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, v := range commands {
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
 		if err != nil {
-			log.Println("发送嵌入式消息失败:", err)
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
 		}
+		registeredCommands[i] = cmd
 	}
 }
