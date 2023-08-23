@@ -6,11 +6,15 @@
 package main
 
 import (
-	"bot-demo/bot"
+	"fmt"
+	"gangbu/bot"
+	"gangbu/route"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-
-	bot.Run()
+	go bot.Run()
+	r := route.NewRouter()
+	fmt.Println("web server is running at http://localhost:8989")
+	_ = r.Run(":8989")
 }
