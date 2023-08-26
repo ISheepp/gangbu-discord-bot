@@ -3,3 +3,4 @@
 ## test contract address on Goerli network
 
 1. 0xbD0c75f3b5f5A64BD266a67e905FBfD68856Ec83
+2. 0xf051E0f27188907e61A8b78d61946f22240A9658
