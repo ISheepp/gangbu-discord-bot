@@ -1,13 +1,5 @@
-# Sample Hardhat Project
+# Even odd game
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+## test contract address on Goerli network
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+1. 0xbD0c75f3b5f5A64BD266a67e905FBfD68856Ec83
