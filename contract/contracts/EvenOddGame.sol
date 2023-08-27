@@ -60,6 +60,7 @@ contract EvenOddGame is VRFConsumerBaseV2, ConfirmedOwner {
     constructor(
         uint64 subscriptionId
     )
+        payable
         VRFConsumerBaseV2(0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D)
         ConfirmedOwner(msg.sender)
     {
@@ -107,9 +108,15 @@ contract EvenOddGame is VRFConsumerBaseV2, ConfirmedOwner {
     /// @param _requestId requestId
     /// @return result game result
     function mainBet(uint256 _requestId) external returns (bool result) {
-        require(s_requests[_requestId].callerAddress == msg.sender, "game must be caller");
+        require(
+            s_requests[_requestId].callerAddress == msg.sender,
+            "game must be caller"
+        );
         require(s_requests[_requestId].exists, "request not found");
-        require(s_requests[_requestId].fulfilled, "random num is not generated");
+        require(
+            s_requests[_requestId].fulfilled,
+            "random num is not generated"
+        );
         require(
             s_requests[_requestId].gameStatus == GameState.InProgress,
             "this game request already done"
@@ -166,7 +173,10 @@ contract EvenOddGame is VRFConsumerBaseV2, ConfirmedOwner {
     /// @param amount ETH amount wei
     function sendReward(address payable _to, uint256 amount) internal {
         // 处理下call的返回值，如果失败，revert交易并发送error
-        require(address(this).balance > amount, "contract has insufficient ETH");
+        require(
+            address(this).balance > amount,
+            "contract has insufficient ETH"
+        );
         (bool success, ) = _to.call{value: amount}("");
         if (!success) {
             revert CallFailed();

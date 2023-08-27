@@ -19,14 +19,13 @@ describe("测试Show", function () {
     return { show, lockedAmount, owner, otherAccount };
   }
 
-  describe("部署测试", function() {
+  describe("部署测试", function () {
     it("加上一个数应该为1", async function () {
       console.log("hihihi");
       const { show } = await loadFixture(deployShowContract);
 
-      await show.add()
+      await show.add();
       expect(await show.num()).to.equal(1);
     });
-  })
-
+  });
 });
