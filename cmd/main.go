@@ -11,13 +11,14 @@ import (
 	"gangbu/pkg/util"
 	"gangbu/route"
 	_ "github.com/joho/godotenv/autoload"
+	"os"
 )
 
 func main() {
 	go bot.Run()
 	r := route.NewRouter()
 	util.Logger.Info("web server is running at http://localhost:8989")
-	_ = r.Run(":8989")
+	_ = r.Run(os.Getenv("PORT"))
 }
 
 func init() {
