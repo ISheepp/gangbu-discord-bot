@@ -6,8 +6,9 @@
 package main
 
 import (
-	"fmt"
 	"gangbu/bot"
+	"gangbu/pkg/dao"
+	"gangbu/pkg/util"
 	"gangbu/route"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -15,6 +16,11 @@ import (
 func main() {
 	go bot.Run()
 	r := route.NewRouter()
-	fmt.Println("web server is running at http://localhost:8989")
+	util.Logger.Info("web server is running at http://localhost:8989")
 	_ = r.Run(":8989")
+}
+
+func init() {
+	util.InitLog()
+	dao.MySQLInit()
 }

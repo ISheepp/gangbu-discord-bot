@@ -2,8 +2,8 @@ package api
 
 import (
 	"fmt"
+	"gangbu/pkg/e"
 	"gangbu/service"
-	_type "gangbu/type"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -15,13 +15,13 @@ func ShowAllCommands() gin.HandlerFunc {
 		commands, err := service.ShowAllCommands()
 		if err != nil {
 			log.Println("show all commands failed!", err)
-			c.JSON(http.StatusInternalServerError, &_type.ResponseData{
+			c.JSON(http.StatusInternalServerError, &e.ResponseData{
 				Message: err.Error(),
 				Status:  false,
 				Data:    nil,
 			})
 		}
-		c.JSON(http.StatusOK, &_type.ResponseData{
+		c.JSON(http.StatusOK, &e.ResponseData{
 			Message: "show all bot commands successfully!",
 			Status:  true,
 			Data:    commands,
@@ -36,14 +36,14 @@ func DeleteCommand() gin.HandlerFunc {
 		err := service.DeleteCommand(id)
 		if err != nil {
 			log.Println("delete command failed!", err)
-			c.JSON(http.StatusInternalServerError, &_type.ResponseData{
+			c.JSON(http.StatusInternalServerError, &e.ResponseData{
 				Message: err.Error(),
 				Status:  false,
 				Data:    nil,
 			})
 		}
 		message := fmt.Sprintf("delete bot command 「%s」 successfully!", id)
-		c.JSON(http.StatusOK, &_type.ResponseData{
+		c.JSON(http.StatusOK, &e.ResponseData{
 			Message: message,
 			Status:  true,
 			Data:    nil,
@@ -57,14 +57,14 @@ func CreateCommand() gin.HandlerFunc {
 		err := service.CreateCommand()
 		if err != nil {
 			log.Println("create command failed!", err)
-			c.JSON(http.StatusInternalServerError, &_type.ResponseData{
+			c.JSON(http.StatusInternalServerError, &e.ResponseData{
 				Message: err.Error(),
 				Status:  false,
 				Data:    nil,
 			})
 		}
 		message := "create bot command successfully!"
-		c.JSON(http.StatusOK, &_type.ResponseData{
+		c.JSON(http.StatusOK, &e.ResponseData{
 			Message: message,
 			Status:  true,
 			Data:    nil,

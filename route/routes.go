@@ -16,7 +16,7 @@ func NewRouter() *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
-		v1.GET("/discord", api.ShowAllCommands())
+		v1.GET("/info/:id", api.ShowPlayerInfo())
 	}
 	return r
 }

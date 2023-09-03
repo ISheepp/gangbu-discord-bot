@@ -1,4 +1,4 @@
-package _type
+package e
 
 type ResponseData struct {
 	Message string `json:"message"`
