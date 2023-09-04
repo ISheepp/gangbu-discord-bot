@@ -14,3 +14,12 @@ type WithDrawHistory struct {
 	WithdrawStatus      int
 	ServerId            string // discord server id
 }
+
+type WithDrawHistoryDto struct {
+	ID              uint
+	WithdrawValue   int64
+	WithDrawTime    time.Time
+	WithDrawAddress string
+	WithdrawStatus  int
+	ServerId        string // discord server id
+}
