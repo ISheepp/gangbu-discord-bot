@@ -13,11 +13,19 @@ type playerUsecase struct {
 	playerRepo models.PlayerRepository
 }
 
+func (pu *playerUsecase) GetByDiscordUserID(discordUserID string) (*models.Player, error) {
+	player, err := pu.playerRepo.GetByDiscordUserID(discordUserID)
+	if err != nil {
+		return nil, err
+	}
+	return player, nil
+}
+
 func NewPlayerUsecase(pr models.PlayerRepository) models.PlayerUsecase {
 	return &playerUsecase{playerRepo: pr}
 }
 
-func (pu *playerUsecase) GetByDiscordUserID(discordUserID string) (*models.PlayerVo, error) {
+func (pu *playerUsecase) GetByDiscordUserIDOrCreate(discordUserID string) (*models.PlayerVo, error) {
 	player, err := pu.playerRepo.GetByDiscordUserID(discordUserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"gangbu/util"
+	"gangbu/pkg/util"
 	"github.com/bwmarrin/discordgo"
 	"os"
 )

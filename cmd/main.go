@@ -6,7 +6,7 @@
 package main
 
 import (
-	"gangbu/bot"
+	"gangbu/game/listener"
 	"gangbu/pkg/dao"
 	"gangbu/pkg/util"
 	"gangbu/route"
@@ -15,7 +15,8 @@ import (
 )
 
 func main() {
-	go bot.Run()
+	// go bot.Run()
+	go listener.ChainListener()
 	r := route.NewRouter()
 	util.Logger.Info("web server is running at http://localhost:8989")
 	_ = r.Run(os.Getenv("PORT"))

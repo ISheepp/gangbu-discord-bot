@@ -24,7 +24,6 @@ type PlayerVo struct {
 }
 
 type PlayerCreateBo struct {
-	// todo validation
 	DiscordUserId string
 }
 
@@ -34,6 +33,7 @@ type PlayerRepository interface {
 }
 
 type PlayerUsecase interface {
-	GetByDiscordUserID(discordUserID string) (*PlayerVo, error)
+	GetByDiscordUserIDOrCreate(discordUserID string) (*PlayerVo, error)
 	CreatePlayer(bo PlayerCreateBo) error
+	GetByDiscordUserID(discordUserID string) (*Player, error)
 }

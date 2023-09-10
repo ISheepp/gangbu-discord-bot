@@ -1,7 +1,10 @@
 package util
 
 import (
+	"crypto/ecdsa"
 	"github.com/bwmarrin/discordgo"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,4 +26,16 @@ func GetDiscordClient() *discordgo.Session {
 		}
 	}
 	return discord
+}
+
+func StringToPrivateKey(privateKeyStr string) (*ecdsa.PrivateKey, error) {
+	privateKeyByte, err := hexutil.Decode(privateKeyStr)
+	if err != nil {
+		return nil, err
+	}
+	privateKey, err := crypto.ToECDSA(privateKeyByte)
+	if err != nil {
+		return nil, err
+	}
+	return privateKey, nil
 }

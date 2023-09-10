@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"gangbu/util"
+	"gangbu/pkg/util"
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"strings"

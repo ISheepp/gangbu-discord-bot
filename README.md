@@ -8,3 +8,10 @@
 + /history: 查看游戏历史记录
 + /withdraw : 提款 「输入address，amount」
 
+
+
+`abigen --abi abi.abi --pkg models --type EvenOddGame --out even_odd_game.go`
+
+
+参考事务
+https://blogs.halodoc.io/db-transactions-in-go/

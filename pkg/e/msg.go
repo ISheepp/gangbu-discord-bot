@@ -1,8 +1,11 @@
 package e
 
 var MsgFlags = map[int]string{
-	SUCCESS: "ok",
-	ERROR:   "fail",
+	SUCCESS:                   "ok",
+	ERROR:                     "fail",
+	DiscordUserNotFound:       "discord user not found",
+	ErrorDiscordId:            "discord id error, may not snowflake",
+	ErrorEthereumNodeResponse: "eth node response error",
 }
 
 // GetMsg get error information based on Code

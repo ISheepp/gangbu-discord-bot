@@ -3,7 +3,7 @@ package bot
 import (
 	"fmt"
 	"gangbu/bot/handler"
-	"gangbu/util"
+	"gangbu/pkg/util"
 	"log"
 	"os"
 	"os/signal"
