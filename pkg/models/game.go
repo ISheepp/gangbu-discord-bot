@@ -16,6 +16,8 @@ type GameHistory struct {
 	BetValue            int64      // bet value gwei
 	FinishTime          *time.Time // bet finished time 用指针可以传nil
 	ServerId            string     // discord server id
+	RequestRandomTxId   string     // tx id
+	MainBetTxId         string     // tx id
 }
 
 type GameHistoryBo struct {
@@ -27,8 +29,14 @@ type GameHistoryBo struct {
 
 type GameHistoryRepository interface {
 	CreateGame(gh *GameHistory, db *gorm.DB) error
+	UpdateRequestIdByTxId(txId string, requestID string, db *gorm.DB) error
+	GetGameHistoryByRequestId(requestId string, db *gorm.DB) (*GameHistory, error)
+	UpdateGameAfterMainBet(game *GameHistory, db *gorm.DB) error
 }
 
 type GameHistoryUsecase interface {
 	CreateGame(bo GameHistoryBo) error
+	UpdateRequestIdByTxId(txId string, requestID string) error
+	GetGameHistoryByRequestId(requestId string) (*GameHistory, error)
+	UpdateGameAfterMainBet(game *GameHistory) error
 }

@@ -22,21 +22,32 @@ type gameHistoryUsecase struct {
 	db         *gorm.DB
 }
 
-func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
-	tx := ghu.db.Begin()
-	err := ghu.gameRepo.CreateGame(&models.GameHistory{
-		PlayerDiscordUserId: bo.PlayerDiscordUserId,
-		Choice:              int(bo.Choice),
-		GameStatus:          e.IN_PROGRESS,
-		BetValue:            bo.BetValue,
-		ServerId:            bo.ServerId,
-		FinishTime:          nil,
-	}, tx)
+func (ghu *gameHistoryUsecase) UpdateGameAfterMainBet(game *models.GameHistory) error {
+	err := ghu.gameRepo.UpdateGameAfterMainBet(game, ghu.db)
 	if err != nil {
-		util.Logger.Error("创建游戏失败!", err)
-		tx.Rollback()
 		return err
 	}
+	return nil
+}
+
+func (ghu *gameHistoryUsecase) GetGameHistoryByRequestId(requestId string) (*models.GameHistory, error) {
+	game, err := ghu.gameRepo.GetGameHistoryByRequestId(requestId, ghu.db)
+	if err != nil {
+		return nil, err
+	}
+	return game, nil
+}
+
+func (ghu *gameHistoryUsecase) UpdateRequestIdByTxId(txId string, requestID string) error {
+	err := ghu.gameRepo.UpdateRequestIdByTxId(txId, requestID, ghu.db)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
+	tx := ghu.db.Begin()
 	// 调用合约函数，拿到requestId
 	// 连接到以太坊节点
 	client, err := ethclient.Dial(os.Getenv("ALCHEMY_URL"))
@@ -85,15 +96,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 		util.Logger.Error("创建私钥失败!", err)
 		return err
 	}
-	// 创建一个session
-	// session := &models.EvenOddGameSession{
-	// 	Contract: game,
-	// 	CallOpts: bind.CallOpts{
-	// 		Pending: true,
-	// 	},
-	// 	TransactOpts: bind.TransactOpts{},
-	// }
-	// util.StringToPrivateKey(user.PrivateKey)
+
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(chainId)))
 	if err != nil {
 		util.Logger.Error("创建签名对象失败!", err)
@@ -109,15 +112,31 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 		return err
 	}
 	// 等待交易, 打印hash地址
-	util.Logger.Info("交易hash:", blockTx.Hash().Hex())
+	txId := blockTx.Hash().Hex()
+	util.Logger.Info("交易hash:", txId)
+	// 保存此次交易信息
+	err = ghu.gameRepo.CreateGame(&models.GameHistory{
+		PlayerDiscordUserId: bo.PlayerDiscordUserId,
+		Choice:              int(bo.Choice),
+		GameStatus:          e.IN_PROGRESS,
+		BetValue:            bo.BetValue,
+		ServerId:            bo.ServerId,
+		FinishTime:          nil,
+		RequestRandomTxId:   txId,
+	}, tx)
+	if err != nil {
+		util.Logger.Error("创建游戏失败!", err)
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
 	txReceipt, err := bind.WaitMined(context.Background(), client, blockTx)
 	if err != nil {
 		util.Logger.Error("等待交易失败!", err)
 		tx.Rollback()
 		return err
 	}
-	tx.Commit()
-	util.Logger.Info("请求随机数完成!", txReceipt)
+	util.Logger.Info("请求随机数完成!", txReceipt.TxHash.Hex())
 	return nil
 }
 

@@ -1,7 +1,7 @@
 package e
 
 const (
-	SUCCESS = iota
+	SUCCESS = iota + 1
 	ERROR
 	DiscordUserNotFound
 	ErrorDiscordId

@@ -7,6 +7,6 @@ const (
 )
 
 const (
-	IN_PROGRESS = iota
+	IN_PROGRESS = iota + 1
 	FINISHED
 )

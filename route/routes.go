@@ -3,6 +3,7 @@ package route
 import (
 	"context"
 	_gameHandler "gangbu/game/handler"
+	"gangbu/game/listener"
 	_gameRepo "gangbu/game/repository/mysql"
 	_gameUsecase "gangbu/game/usecase"
 	"gangbu/pkg/dao"
@@ -21,5 +22,10 @@ func NewRouter() *gin.Engine {
 	playerUsecase := _playerUsecase.NewPlayerUsecase(playerRepository)
 	_playerHandler.NewPlayerHandler(r, playerUsecase)
 	_gameHandler.NewGameHistoryHandler(r, gameUsecase, playerUsecase)
+	chainListener := listener.NewChainListener(gameUsecase, playerUsecase)
+	kafkaListener := listener.NewKafkaListener()
+	// 监听器
+	chainListener.StartListen()
+	kafkaListener.StartListen()
 	return r
 }

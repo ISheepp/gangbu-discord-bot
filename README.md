@@ -15,3 +15,6 @@
 
 参考事务
 https://blogs.halodoc.io/db-transactions-in-go/
+
+kafka-go连接问题
+https://github.com/segmentio/kafka-go/issues/499

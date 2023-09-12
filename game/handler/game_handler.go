@@ -25,7 +25,7 @@ func (ghh *gameHistoryHandler) play(c *gin.Context) {
 		util.Logger.Error("解析json失败!", err)
 		appG.Response(http.StatusInternalServerError, e.ERROR, err)
 	}
-	// todo 注意事务
+	// todo blocking
 	err = ghu.CreateGame(*bo)
 	if err != nil {
 		util.Logger.Error("创建游戏失败!", err)
@@ -34,6 +34,10 @@ func (ghh *gameHistoryHandler) play(c *gin.Context) {
 	}
 	util.Logger.Info("创建游戏成功!")
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
+
+}
+
+func (ghh *gameHistoryHandler) getGameHistoryByDiscordId(c *gin.Context) {
 
 }
 

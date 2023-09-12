@@ -37,6 +37,7 @@ func InitLog() {
 		HideKeys:        true,
 		TimestampFormat: time.DateTime,
 		NoColors:        !isDev,
+		CallerFirst:     true,
 	})
 	Logger = logger
 }
