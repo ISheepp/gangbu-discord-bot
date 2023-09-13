@@ -74,6 +74,7 @@ func (cl *chainListener) RequestRandomListener() {
 		select {
 		case err = <-sub.Err():
 			util.Logger.Error("订阅主合约失败", err)
+			time.Sleep(5 * time.Second)
 		case event := <-channel:
 			util.Logger.Infof("接收到请求随机数完成事件RequestId:%+v", event.RequestId)
 			requestId := event.RequestId.String()
@@ -217,6 +218,7 @@ func invokeMainBet(event *models.VRFCoordinatorV2RequestFulfilled, cl *chainList
 		util.Logger.Error("序列化失败!", err)
 		return
 	}
+	util.Logger.Info("序列化完成，结果：", marshal)
 	err = writer.WriteMessages(context.Background(), kafka.Message{Value: marshal})
 	if err != nil {
 		util.Logger.Error("写入kafka失败!", err)

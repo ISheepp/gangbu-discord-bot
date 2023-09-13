@@ -70,7 +70,7 @@ var (
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Content: "Huh. I see, maybe some of these resources might help you?",
@@ -83,7 +83,7 @@ var (
 										Name: "📜",
 									},
 									Label: "Documentation",
-									Style: discordgo.PrimaryButton,
+									Style: discordgo.LinkButton,
 									URL:   "https://discord.com/developers/docs/interactions/message-components#buttons",
 								},
 								discordgo.Button{
@@ -94,25 +94,19 @@ var (
 									Style: discordgo.LinkButton,
 									URL:   "https://discord.gg/discord-developers",
 								},
-								discordgo.Button{
-									Emoji: discordgo.ComponentEmoji{
-										Name: "🦫",
-									},
-									Label: "Discord Gophers",
-									Style: discordgo.LinkButton,
-									URL:   "https://discord.gg/7RuRrVHyXF",
-								},
-								discordgo.TextInput{
-
-									Label:    "Discord Gophers",
-									Style:    1,
-									Required: true,
-								},
 							},
 						},
 					},
 				},
+				//Type: discordgo.InteractionResponseChannelMessageWithSource,
+				//Data: &discordgo.InteractionResponseData{
+				//	Content: "CONTENT",
+				//},
 			})
+			if err != nil {
+				util.Logger.Error(err)
+				return
+			}
 		},
 		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 

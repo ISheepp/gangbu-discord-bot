@@ -128,7 +128,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 		Choice:              int(bo.Choice),
 		GameStatus:          e.IN_PROGRESS,
 		BetValue:            bo.BetValue,
-		ServerId:            bo.ServerId,
+		GuildID:             bo.GuildID,
 		FinishTime:          nil,
 		RequestRandomTxId:   txId,
 	}, tx)

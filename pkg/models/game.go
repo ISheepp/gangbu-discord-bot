@@ -15,7 +15,8 @@ type GameHistory struct {
 	GameStatus          int        `gorm:"comment:'游戏状态 2结束，1进行中'"`    // game status
 	BetValue            int64      // bet value gwei
 	FinishTime          *time.Time // bet finished time 用指针可以传nil
-	ServerId            string     // discord server id
+	GuildID             string     // discord server id
+	ChannelID           string     // discord channel id
 	RequestRandomTxId   string     // tx id
 	MainBetTxId         string     // tx id
 }
@@ -24,7 +25,7 @@ type GameHistoryBo struct {
 	PlayerDiscordUserId string `validate:"required"`
 	Choice              uint8  `validate:"required, gt=0, lt=2"`
 	BetValue            int64  `validate:"required, gt=0"`
-	ServerId            string `validate:"required"`
+	GuildID             string `validate:"required"`
 }
 
 type GameHistoryRepository interface {

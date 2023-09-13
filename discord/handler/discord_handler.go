@@ -1,18 +1,29 @@
-package api
+package handler
 
 import (
 	"fmt"
+	"gangbu/discord/usecase"
 	"gangbu/pkg/e"
-	"gangbu/service"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 )
 
-// ShowAllCommands show all bot commands
-func ShowAllCommands() gin.HandlerFunc {
+type discordHandler struct {
+}
+
+func NewDiscordHandler(c *gin.Engine) {
+	handler := &discordHandler{}
+	botGroup := c.Group("/v1/bot")
+	botGroup.GET("/commands", handler.showAllCommands())
+	botGroup.DELETE("/commands/:id", handler.deleteCommand())
+	botGroup.POST("/commands", handler.createCommand())
+}
+
+// showAllCommands show all bot commands
+func (dh *discordHandler) showAllCommands() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		commands, err := service.ShowAllCommands()
+		commands, err := usecase.ShowAllCommands()
 		if err != nil {
 			log.Println("show all commands failed!", err)
 			c.JSON(http.StatusInternalServerError, &e.ResponseData{
@@ -29,11 +40,11 @@ func ShowAllCommands() gin.HandlerFunc {
 	}
 }
 
-// DeleteCommand delete a bot command
-func DeleteCommand() gin.HandlerFunc {
+// deleteCommand delete a bot command
+func (dh *discordHandler) deleteCommand() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		err := service.DeleteCommand(id)
+		err := usecase.DeleteCommand(id)
 		if err != nil {
 			log.Println("delete command failed!", err)
 			c.JSON(http.StatusInternalServerError, &e.ResponseData{
@@ -51,10 +62,10 @@ func DeleteCommand() gin.HandlerFunc {
 	}
 }
 
-// CreateCommand create a bot command
-func CreateCommand() gin.HandlerFunc {
+// createCommand create a bot command
+func (dh *discordHandler) createCommand() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := service.CreateCommand()
+		err := usecase.CreateCommand()
 		if err != nil {
 			log.Println("create command failed!", err)
 			c.JSON(http.StatusInternalServerError, &e.ResponseData{

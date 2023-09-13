@@ -12,7 +12,7 @@ type WithDrawHistory struct {
 	WithDrawTime        time.Time
 	WithDrawAddress     string
 	WithdrawStatus      int
-	ServerId            string // discord server id
+	GuildID             string // discord server id
 }
 
 type WithDrawHistoryDto struct {
@@ -21,5 +21,5 @@ type WithDrawHistoryDto struct {
 	WithDrawTime    time.Time
 	WithDrawAddress string
 	WithdrawStatus  int
-	ServerId        string // discord server id
+	GuildID         string // discord server id
 }
