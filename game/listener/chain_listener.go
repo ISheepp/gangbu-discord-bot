@@ -186,14 +186,14 @@ func invokeMainBet(event *models.VRFCoordinatorV2RequestFulfilled, cl *chainList
 		util.Logger.Error("等待交易失败!", err)
 		return
 	}
-	util.Logger.Info("调用MainBet成功!", txReceipt)
+	util.Logger.Info("调用MainBet成功! txHash:", txReceipt.TxHash.Hex())
 	requests, err := contract.SRequests(nil, requestId)
 	if err != nil {
 		util.Logger.Error("查询request失败!", err)
 		return
 	}
-	util.Logger.Info("查询request成功!", requests)
-	game.RandomNumber = requests.RandomNum.Int64()
+	// util.Logger.Info("查询request成功!", requests)
+	game.RandomNumber = requests.RandomNum.String()
 	game.GameStatus = e.FINISHED
 	game.MainBetTxId = blockTx.Hash().Hex()
 	finishTime := time.Unix(requests.GameDoneTimestamp.Int64(), 0)

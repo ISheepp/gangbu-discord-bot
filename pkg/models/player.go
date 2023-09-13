@@ -30,6 +30,7 @@ type PlayerCreateBo struct {
 type PlayerRepository interface {
 	GetByDiscordUserID(discordUserID string) (*Player, error)
 	CreatePlayer(p *Player) error
+	UpdateWalletValue(id uint, walletValue int64) error
 }
 
 type PlayerUsecase interface {

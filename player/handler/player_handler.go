@@ -50,7 +50,7 @@ func (ph *PlayerHandler) ShowPlayerInfo(c *gin.Context) {
 		}
 	}()
 	marshal, err := json.Marshal(user)
-	util.Logger.Info("查询玩家信息成功!：", string(marshal))
+	util.Logger.Info("查询discord接口信息成功!：", string(marshal))
 	player, err := pu.GetByDiscordUserIDOrCreate(discordId)
 	if err != nil {
 		util.Logger.Error("查询玩家信息失败！", err)

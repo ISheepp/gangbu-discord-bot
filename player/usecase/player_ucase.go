@@ -1,12 +1,18 @@
 package usecase
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"gangbu/pkg/models"
 	"gangbu/pkg/util"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"gorm.io/gorm"
+	"math/big"
+	"os"
+	"time"
 )
 
 type playerUsecase struct {
@@ -39,15 +45,41 @@ func (pu *playerUsecase) GetByDiscordUserIDOrCreate(discordUserID string) (*mode
 			return nil, err
 		}
 	}
+	// 查询一下链上的余额
+	walletValue, err := getWalletValueFromChain(player)
+	if err != nil {
+		return nil, err
+	}
+	// 更新数据库记录
+	err = pu.playerRepo.UpdateWalletValue(player.ID, walletValue.Int64())
 	res := &models.PlayerVo{
 		ID:                 player.ID,
 		DiscordUserId:      player.DiscordUserId,
 		WalletAddress:      player.WalletAddress,
-		WalletValue:        player.WalletValue, // todo 转为eth单位
-		WithDrawHistoryDto: nil,                // todo 查询提款记录
+		WalletValue:        walletValue.Int64(), // todo 转为eth单位
+		WithDrawHistoryDto: nil,                 // todo 查询提款记录
 		CreateAt:           player.CreatedAt,
 	}
 	return res, nil
+}
+
+func getWalletValueFromChain(player *models.Player) (*big.Int, error) {
+	start := time.Now()
+	eth, err := ethclient.Dial(os.Getenv("ALCHEMY_URL"))
+	if err != nil {
+		util.Logger.Error("连接到以太坊节点失败!", err)
+		return nil, err
+	}
+	defer eth.Close()
+	// 查询地址的余额
+	balanceAt, err := eth.BalanceAt(context.Background(), common.HexToAddress(player.WalletAddress), nil)
+	if err != nil {
+		util.Logger.Error("查询余额失败!", err)
+		return nil, err
+	}
+	end := time.Now()
+	util.Logger.Info("查询余额耗时:", end.Sub(start))
+	return balanceAt, nil
 }
 
 func (pu *playerUsecase) CreatePlayer(bo models.PlayerCreateBo) error {

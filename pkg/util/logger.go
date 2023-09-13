@@ -1,12 +1,15 @@
 package util
 
 import (
+	"fmt"
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 	"io"
 	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -38,7 +41,16 @@ func InitLog() {
 		TimestampFormat: time.DateTime,
 		NoColors:        !isDev,
 		CallerFirst:     true,
+		CustomCallerFormatter: func(frame *runtime.Frame) string {
+			funcInfo := runtime.FuncForPC(frame.PC)
+			if funcInfo == nil {
+				return "error during runtime.FuncForPC"
+			}
+			fullPath, line := funcInfo.FileLine(frame.PC)
+			return fmt.Sprintf(" [%v:%v]", filepath.Base(fullPath), line)
+		},
 	})
+	logger.ReportCaller = true
 	Logger = logger
 }
 

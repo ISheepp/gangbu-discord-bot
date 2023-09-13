@@ -11,9 +11,11 @@ import (
 	_playerRepo "gangbu/player/repository/mysql"
 	_playerUsecase "gangbu/player/usecase"
 	"github.com/gin-gonic/gin"
+	"os"
 )
 
 func NewRouter() *gin.Engine {
+	gin.SetMode(os.Getenv("GIN_MODE"))
 	r := gin.Default()
 	db := dao.NewDBClient(context.Background())
 	playerRepository := _playerRepo.NewPlayerRepository(db)

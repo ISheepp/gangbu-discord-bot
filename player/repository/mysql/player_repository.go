@@ -9,11 +9,8 @@ type playerRepository struct {
 	db *gorm.DB
 }
 
-func NewPlayerRepository(db *gorm.DB) models.PlayerRepository {
-	return &playerRepository{
-		db: db,
-	}
-
+func (pr *playerRepository) UpdateWalletValue(playerId uint, walletValue int64) error {
+	return pr.db.Model(&models.Player{}).Where("id = ?", playerId).Update("wallet_value", walletValue).Error
 }
 
 func (pr *playerRepository) GetByDiscordUserID(discordUserID string) (*models.Player, error) {
@@ -29,4 +26,11 @@ func (pr *playerRepository) CreatePlayer(p *models.Player) error {
 		return e
 	}
 	return nil
+}
+
+func NewPlayerRepository(db *gorm.DB) models.PlayerRepository {
+	return &playerRepository{
+		db: db,
+	}
+
 }

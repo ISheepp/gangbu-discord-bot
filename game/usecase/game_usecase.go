@@ -22,6 +22,14 @@ type gameHistoryUsecase struct {
 	db         *gorm.DB
 }
 
+func (ghu *gameHistoryUsecase) GetGameHistoryByDiscordId(discordId string) ([]models.GameHistory, error) {
+	game, err := ghu.gameRepo.GetGameHistoryByDiscordId(discordId, ghu.db)
+	if err != nil {
+		return nil, err
+	}
+	return game, nil
+}
+
 func (ghu *gameHistoryUsecase) UpdateGameAfterMainBet(game *models.GameHistory) error {
 	err := ghu.gameRepo.UpdateGameAfterMainBet(game, ghu.db)
 	if err != nil {

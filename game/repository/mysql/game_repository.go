@@ -8,6 +8,15 @@ import (
 type gameHistoryRepository struct {
 }
 
+func (ghr *gameHistoryRepository) GetGameHistoryByDiscordId(discordId string, db *gorm.DB) ([]models.GameHistory, error) {
+	var gh []models.GameHistory
+	result := db.Where("player_discord_user_id = ?", discordId).Find(&gh)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return gh, nil
+}
+
 func (ghr *gameHistoryRepository) UpdateGameAfterMainBet(game *models.GameHistory, db *gorm.DB) error {
 	return db.Save(game).Error
 }

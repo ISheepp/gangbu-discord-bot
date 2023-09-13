@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 )
 
 func GetDiscordClient() *discordgo.Session {
@@ -38,4 +39,16 @@ func StringToPrivateKey(privateKeyStr string) (*ecdsa.PrivateKey, error) {
 		return nil, err
 	}
 	return privateKey, nil
+}
+
+// Timer 函数接受一个函数作为参数，并返回一个新的函数，
+// 该新函数会测量传递的函数的运行时间并将其打印到日志中。
+func Timer(fn func()) func() {
+	return func() {
+		startTime := time.Now()
+		fn()
+		endTime := time.Now()
+		elapsed := endTime.Sub(startTime)
+		Logger.Infof("Function took %s to run\n", elapsed)
+	}
 }

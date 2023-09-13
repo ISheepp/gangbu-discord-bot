@@ -38,7 +38,19 @@ func (ghh *gameHistoryHandler) play(c *gin.Context) {
 }
 
 func (ghh *gameHistoryHandler) getGameHistoryByDiscordId(c *gin.Context) {
+	ghu := ghh.ghUsecase
+	appG := app.Gin{
+		C: c,
+	}
+	discordId := c.Param("id")
 
+	gameHistory, err := ghu.GetGameHistoryByDiscordId(discordId)
+	if err != nil {
+		util.Logger.Error("获取游戏记录失败!", err)
+		appG.Response(http.StatusInternalServerError, e.ERROR, nil)
+		return
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, gameHistory)
 }
 
 func NewGameHistoryHandler(c *gin.Engine, ghu models.GameHistoryUsecase, pu models.PlayerUsecase) {
@@ -49,5 +61,6 @@ func NewGameHistoryHandler(c *gin.Engine, ghu models.GameHistoryUsecase, pu mode
 	v1 := c.Group("/v1")
 	{
 		v1.POST("/play", handler.play)
+		v1.GET("/game-history/:id", handler.getGameHistoryByDiscordId)
 	}
 }
