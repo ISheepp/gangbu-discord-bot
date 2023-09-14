@@ -8,6 +8,9 @@ import (
 	"gangbu/pkg/queue"
 	"gangbu/pkg/util"
 	"github.com/bwmarrin/discordgo"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"os"
 	"strconv"
 	"time"
 )
@@ -65,11 +68,23 @@ func pushMsgToDiscord(k *kafkaListener, game *models.GameHistory) {
 	betValue := util.WeiToEther(game.BetValue)
 	// 查询钱包余额
 	player, err := k.pUsecase.GetByDiscordUserID(game.PlayerDiscordUserId)
+	client, err := ethclient.Dial(os.Getenv("ALCHEMY_URL"))
+	if err != nil {
+		util.Logger.Error("连接到以太坊节点失败!", err)
+		return
+	}
+	defer client.Close()
+	if err != nil {
+		util.Logger.Error(err)
+		return
+	}
+	value, err := client.BalanceAt(context.Background(), common.HexToAddress(player.WalletAddress), nil)
+
 	if err != nil {
 		util.Logger.Error("查询玩家余额失败", err)
 		return
 	}
-	walletValue := util.WeiToEther(player.WalletValue)
+	walletValue := util.WeiToEther(value.Int64())
 	// 将时间对象格式化为 ISO 8601 格式的字符串
 	iso8601String := game.FinishTime.Format("2006-01-02T15:04:05-07:00")
 	content := fmt.Sprintf("Game completed! <@%s>", game.PlayerDiscordUserId)
