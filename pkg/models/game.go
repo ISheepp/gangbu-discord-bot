@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/ethereum/go-ethereum/core/types"
 	"gorm.io/gorm"
 	"time"
 )
@@ -26,6 +27,7 @@ type GameHistoryBo struct {
 	Choice              uint8  `validate:"required, gt=0, lt=2"`
 	BetValue            int64  `validate:"required, gt=0"`
 	GuildID             string `validate:"required"`
+	ChannelID           string `validate:"required"`
 }
 
 type GameHistoryRepository interface {
@@ -34,12 +36,14 @@ type GameHistoryRepository interface {
 	GetGameHistoryByRequestId(requestId string, db *gorm.DB) (*GameHistory, error)
 	UpdateGameAfterMainBet(game *GameHistory, db *gorm.DB) error
 	GetGameHistoryByDiscordId(discordId string, db *gorm.DB) ([]GameHistory, error)
+	GetLastFiveGameHistoryByDiscordId(discordId string, db *gorm.DB) ([]GameHistory, error)
 }
 
 type GameHistoryUsecase interface {
-	CreateGame(bo GameHistoryBo) error
+	CreateGame(bo GameHistoryBo) (*types.Transaction, error)
 	UpdateRequestIdByTxId(txId string, requestID string) error
 	GetGameHistoryByRequestId(requestId string) (*GameHistory, error)
 	UpdateGameAfterMainBet(game *GameHistory) error
 	GetGameHistoryByDiscordId(discordId string) ([]GameHistory, error)
+	GetLastFiveGameHistoryByDiscordId(discordId string) ([]GameHistory, error)
 }

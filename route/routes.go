@@ -4,12 +4,14 @@ import (
 	"context"
 	_discordHandler "gangbu/discord/handler"
 	_gameHandler "gangbu/game/handler"
+	"gangbu/game/listener"
 	_gameRepo "gangbu/game/repository/mysql"
 	_gameUsecase "gangbu/game/usecase"
 	"gangbu/pkg/dao"
 	_playerHandler "gangbu/player/handler"
 	_playerRepo "gangbu/player/repository/mysql"
 	_playerUsecase "gangbu/player/usecase"
+	_withdrawHandler "gangbu/withdraw/handler"
 	"github.com/gin-gonic/gin"
 	"os"
 )
@@ -27,10 +29,11 @@ func NewRouter() *gin.Engine {
 	_playerHandler.NewPlayerHandler(r, playerUsecase)
 	_gameHandler.NewGameHistoryHandler(r, gameUsecase, playerUsecase)
 	_discordHandler.NewDiscordHandler(r)
+	_withdrawHandler.NewWithdrawHandler(r, playerUsecase)
 	// 监听器
-	//chainListener := listener.NewChainListener(gameUsecase, playerUsecase)
-	//kafkaListener := listener.NewKafkaListener()
-	//chainListener.StartListen()
-	//kafkaListener.StartListen()
+	chainListener := listener.NewChainListener(gameUsecase, playerUsecase)
+	kafkaListener := listener.NewKafkaListener(playerUsecase)
+	chainListener.StartListen()
+	kafkaListener.StartListen()
 	return r
 }

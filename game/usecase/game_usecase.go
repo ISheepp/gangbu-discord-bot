@@ -8,6 +8,7 @@ import (
 	"gangbu/pkg/util"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"gorm.io/gorm"
@@ -20,6 +21,14 @@ type gameHistoryUsecase struct {
 	gameRepo   models.GameHistoryRepository
 	playerRepo models.PlayerRepository
 	db         *gorm.DB
+}
+
+func (ghu *gameHistoryUsecase) GetLastFiveGameHistoryByDiscordId(discordId string) ([]models.GameHistory, error) {
+	game, err := ghu.gameRepo.GetLastFiveGameHistoryByDiscordId(discordId, ghu.db)
+	if err != nil {
+		return nil, err
+	}
+	return game, nil
 }
 
 func (ghu *gameHistoryUsecase) GetGameHistoryByDiscordId(discordId string) ([]models.GameHistory, error) {
@@ -54,7 +63,7 @@ func (ghu *gameHistoryUsecase) UpdateRequestIdByTxId(txId string, requestID stri
 	return nil
 }
 
-func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
+func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) (*types.Transaction, error) {
 	tx := ghu.db.Begin()
 	// 调用合约函数，拿到requestId
 	// 连接到以太坊节点
@@ -62,7 +71,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 	if err != nil {
 		util.Logger.Error("连接到以太坊节点失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	defer client.Close()
 
@@ -70,7 +79,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 	if err != nil {
 		util.Logger.Error("查询用户信息失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	// 检查用户游戏内地址的余额是否大于筹码
@@ -79,12 +88,12 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 	if err != nil {
 		util.Logger.Error("查询用户余额失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	if balance.Cmp(big.NewInt(bo.BetValue)) < 0 {
 		util.Logger.Error("用户余额不足!")
 		tx.Rollback()
-		return errors.New("用户余额不足: 当前余额：" + balance.String())
+		return nil, errors.New("用户余额不足: 当前余额：" + balance.String())
 	}
 
 	// 合约地址
@@ -94,7 +103,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 	if err != nil {
 		util.Logger.Error("创建合约对象失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	// 签名对象
 	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
@@ -102,14 +111,14 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 	privateKey, err := crypto.HexToECDSA(user.PrivateKey)
 	if err != nil {
 		util.Logger.Error("创建私钥失败!", err)
-		return err
+		return nil, err
 	}
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(chainId)))
 	if err != nil {
 		util.Logger.Error("创建签名对象失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	// 筹码
 	auth.Value = big.NewInt(bo.BetValue)
@@ -117,7 +126,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 	if err != nil {
 		util.Logger.Error("创建tx交易失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	// 等待交易, 打印hash地址
 	txId := blockTx.Hash().Hex()
@@ -129,23 +138,25 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) error {
 		GameStatus:          e.IN_PROGRESS,
 		BetValue:            bo.BetValue,
 		GuildID:             bo.GuildID,
+		ChannelID:           bo.ChannelID,
 		FinishTime:          nil,
 		RequestRandomTxId:   txId,
 	}, tx)
 	if err != nil {
 		util.Logger.Error("创建游戏失败!", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	tx.Commit()
-	txReceipt, err := bind.WaitMined(context.Background(), client, blockTx)
-	if err != nil {
-		util.Logger.Error("等待交易失败!", err)
-		tx.Rollback()
-		return err
-	}
-	util.Logger.Info("请求随机数完成!", txReceipt.TxHash.Hex())
-	return nil
+	// todo 先不等待交易完成
+	// txReceipt, err := bind.WaitMined(context.Background(), client, blockTx)
+	// if err != nil {
+	// 	util.Logger.Error("等待交易失败!", err)
+	// 	tx.Rollback()
+	// 	return nil, err
+	// }
+	// util.Logger.Info("请求随机数完成!", txReceipt.TxHash.Hex())
+	return blockTx, nil
 }
 
 func NewGameUsecase(gameRepo models.GameHistoryRepository, playerRepo models.PlayerRepository, db *gorm.DB) models.GameHistoryUsecase {

@@ -218,7 +218,7 @@ func invokeMainBet(event *models.VRFCoordinatorV2RequestFulfilled, cl *chainList
 		util.Logger.Error("序列化失败!", err)
 		return
 	}
-	util.Logger.Info("序列化完成，结果：", marshal)
+	util.Logger.Info("序列化完成，结果：", string(marshal))
 	err = writer.WriteMessages(context.Background(), kafka.Message{Value: marshal})
 	if err != nil {
 		util.Logger.Error("写入kafka失败!", err)

@@ -26,14 +26,14 @@ func (ghh *gameHistoryHandler) play(c *gin.Context) {
 		appG.Response(http.StatusInternalServerError, e.ERROR, err)
 	}
 	// todo blocking
-	err = ghu.CreateGame(*bo)
+	resp, err := ghu.CreateGame(*bo)
 	if err != nil {
 		util.Logger.Error("创建游戏失败!", err)
 		appG.Response(http.StatusInternalServerError, e.ERROR, err.Error())
 		return
 	}
 	util.Logger.Info("创建游戏成功!")
-	appG.Response(http.StatusOK, e.SUCCESS, nil)
+	appG.Response(http.StatusOK, e.SUCCESS, resp.Hash().Hex())
 
 }
 
@@ -53,6 +53,22 @@ func (ghh *gameHistoryHandler) getGameHistoryByDiscordId(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, gameHistory)
 }
 
+func (ghh *gameHistoryHandler) getLastFiveGameHistoryByDiscordId(c *gin.Context) {
+	ghu := ghh.ghUsecase
+	appG := app.Gin{
+		C: c,
+	}
+	discordId := c.Param("id")
+
+	gameHistory, err := ghu.GetLastFiveGameHistoryByDiscordId(discordId)
+	if err != nil {
+		util.Logger.Error("获取游戏记录失败!", err)
+		appG.Response(http.StatusInternalServerError, e.ERROR, nil)
+		return
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, gameHistory)
+}
+
 func NewGameHistoryHandler(c *gin.Engine, ghu models.GameHistoryUsecase, pu models.PlayerUsecase) {
 	handler := &gameHistoryHandler{
 		ghUsecase: ghu,
@@ -62,5 +78,6 @@ func NewGameHistoryHandler(c *gin.Engine, ghu models.GameHistoryUsecase, pu mode
 	{
 		v1.POST("/play", handler.play)
 		v1.GET("/game-history/:id", handler.getGameHistoryByDiscordId)
+		v1.GET("/game-history-last-five/:id", handler.getLastFiveGameHistoryByDiscordId)
 	}
 }

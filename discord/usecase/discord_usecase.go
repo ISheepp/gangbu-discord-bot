@@ -44,10 +44,6 @@ func CreateCommand() error {
 		return err
 	}
 	commands := map[string]*discordgo.ApplicationCommand{
-		"测试": {
-			Name:        "test",
-			Description: "test command",
-		},
 		"show": {
 			Name:        "show",
 			Description: "show player info",
@@ -60,7 +56,7 @@ func CreateCommand() error {
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "choice",
-					Description: "Please choose 0 or 1, even: 0| odd: 1",
+					Description: "Please choose even or odd",
 					Required:    true,
 					Choices: []*discordgo.ApplicationCommandOptionChoice{
 						{
@@ -88,21 +84,23 @@ func CreateCommand() error {
 		"withdraw": {
 			Name:        "withdraw",
 			Description: "withdraw your ETH",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "address",
+					Description: "Please input your withdraw address",
+					Required:    true,
+				},
+			},
 		},
 	}
 
-	//for name, command := range commands {
-	//	_, err = discord.ApplicationCommandCreate(os.Getenv("APP_ID"), "", command)
-	//	if err != nil {
-	//		util.Logger.Errorf("创建discord command: %v 失败, err: %v", name, err)
-	//		continue
-	//	}
-	//}
-	play := commands["play"]
-	_, err = discord.ApplicationCommandCreate(os.Getenv("APP_ID"), "", play)
-	if err != nil {
-		util.Logger.Errorf("创建discord command: %v 失败, err: %v", "play", err)
-		return err
+	for name, command := range commands {
+		_, err = discord.ApplicationCommandCreate(os.Getenv("APP_ID"), "", command)
+		if err != nil {
+			util.Logger.Errorf("创建discord command: %v 失败, err: %v", name, err)
+			continue
+		}
 	}
 	return nil
 }
