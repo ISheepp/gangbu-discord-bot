@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gangbu/pkg/e"
 	"gangbu/pkg/models"
 	"gangbu/pkg/queue"
 	"gangbu/pkg/util"
@@ -53,9 +54,20 @@ func ListenGameDoneHistory(k *kafkaListener) {
 }
 
 func pushMsgToDiscord(k *kafkaListener, game *models.GameHistory) {
-
 	discord := util.GetDiscordClient()
 	defer discord.Close()
+	if game.GameStatus == e.IN_PROGRESS {
+		content := fmt.Sprintf("Game run failed! <@%s>", game.PlayerDiscordUserId)
+		_, err := discord.ChannelMessageSendComplex(game.ChannelID, &discordgo.MessageSend{
+			Content: content,
+			AllowedMentions: &discordgo.MessageAllowedMentions{
+				Users: []string{game.PlayerDiscordUserId},
+			},
+		})
+		if err != nil {
+			util.Logger.Error("发送游戏结果消息失败", err)
+		}
+	}
 	// 发送消息
 	requestRandomTxUrl := "https://goerli.etherscan.io/tx/" + game.RequestRandomTxId
 	mainBetTxUrl := "https://goerli.etherscan.io/tx/" + game.MainBetTxId
