@@ -75,6 +75,16 @@ func (cl *chainListener) RequestRandomListener() {
 		case err = <-sub.Err():
 			util.Logger.Error("订阅主合约失败", err)
 			time.Sleep(5 * time.Second)
+			// 重试创建连接
+			sub, err = filterer.WatchRequestSent(&bind.WatchOpts{
+				Start:   nil,
+				Context: nil,
+			}, channel)
+			if err != nil {
+				util.Logger.Error("重试订阅主合约失败", err)
+			} else {
+				util.Logger.Info("重试监听主合约事件成功")
+			}
 		case event := <-channel:
 			util.Logger.Infof("接收到请求随机数完成事件RequestId:%+v", event.RequestId)
 			requestId := event.RequestId.String()
@@ -129,6 +139,16 @@ func (cl *chainListener) ChainLinkGenerateRandomListener() {
 		select {
 		case err = <-sub.Err():
 			util.Logger.Error("订阅VRF失败", err)
+			time.Sleep(5 * time.Second)
+			sub, err = filterer.WatchRequestFulfilled(&bind.WatchOpts{
+				Start:   nil,
+				Context: nil,
+			}, channel)
+			if err != nil {
+				util.Logger.Error("重试订阅VRF失败", err)
+			} else {
+				util.Logger.Info("重试监听VRF事件成功")
+			}
 		case event := <-channel:
 			util.Logger.Infof("接收到VRF生成随机数事件:%+v", event.RandomWords)
 			go invokeMainBet(event, cl)

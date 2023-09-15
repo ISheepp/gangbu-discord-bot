@@ -47,7 +47,7 @@ func ListenGameDoneHistory(k *kafkaListener) {
 			continue
 		}
 		// 发送到discord服务器
-		pushMsgToDiscord(k, game)
+		go pushMsgToDiscord(k, game)
 
 	}
 }
