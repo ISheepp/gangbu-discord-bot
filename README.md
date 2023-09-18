@@ -27,3 +27,7 @@
 [参考 gorm 事务](https://blogs.halodoc.io/db-transactions-in-go/)
 
 [kafka-go 连接问题](https://github.com/segmentio/kafka-go/issues/499)
+
+## warning
+
+discord slash command 只有3s的时间给后端响应
