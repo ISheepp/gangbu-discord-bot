@@ -28,6 +28,7 @@
 
 [kafka-go 连接问题](https://github.com/segmentio/kafka-go/issues/499)
 
+[protoc3语法](https://protobuf.dev/programming-guides/proto3/)
 ## warning
 
 discord slash command 只有3s的时间给后端响应

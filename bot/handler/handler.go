@@ -10,7 +10,6 @@ import (
 	"gangbu/pkg/util"
 	"github.com/bwmarrin/discordgo"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,8 +18,6 @@ import (
 
 // AddAllHandlers add all handlers
 func AddAllHandlers(session *discordgo.Session) {
-	session.AddHandler(newMessage)
-	// todo
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			h(s, i)
@@ -46,12 +43,6 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 }
 
 var (
-	commands = []*discordgo.ApplicationCommand{
-		{
-			Name:        "play",
-			Description: "Basic command",
-		},
-	}
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// 调用后端/play接口，传递GuildID和ChannelID
@@ -363,24 +354,3 @@ var (
 		},
 	}
 )
-
-func installCommands() {
-	s := util.GetDiscordClient()
-	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
-	})
-	err := s.Open()
-	if err != nil {
-		log.Fatalf("Cannot open the session: %v", err)
-	}
-
-	log.Println("Adding commands...")
-	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
-	for i, v := range commands {
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
-		if err != nil {
-			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
-		}
-		registeredCommands[i] = cmd
-	}
-}

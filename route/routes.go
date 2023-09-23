@@ -7,7 +7,7 @@ import (
 	"gangbu/game/listener"
 	_gameRepo "gangbu/game/repository/mysql"
 	_gameUsecase "gangbu/game/usecase"
-	"gangbu/pkg/dao"
+	"gangbu/pkg/db"
 	_playerHandler "gangbu/player/handler"
 	_playerRepo "gangbu/player/repository/mysql"
 	_playerUsecase "gangbu/player/usecase"
@@ -19,7 +19,7 @@ import (
 func NewRouter() *gin.Engine {
 	gin.SetMode(os.Getenv("GIN_MODE"))
 	r := gin.Default()
-	db := dao.NewDBClient(context.Background())
+	db := db.NewDBClient(context.Background())
 	playerRepository := _playerRepo.NewPlayerRepository(db)
 	gameHistoryRepository := _gameRepo.NewGameHistoryRepository()
 	gameUsecase := _gameUsecase.NewGameUsecase(gameHistoryRepository, playerRepository, db)

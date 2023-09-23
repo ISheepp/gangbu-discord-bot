@@ -7,7 +7,7 @@ package main
 
 import (
 	"gangbu/bot"
-	"gangbu/pkg/dao"
+	"gangbu/pkg/db"
 	"gangbu/pkg/util"
 	"gangbu/route"
 	_ "github.com/joho/godotenv/autoload"
@@ -23,5 +23,5 @@ func main() {
 
 func init() {
 	util.InitLog()
-	dao.MySQLInit()
+	db.MySQLInit()
 }
