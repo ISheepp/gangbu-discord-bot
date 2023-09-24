@@ -2,13 +2,16 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"gangbu/pkg/app"
 	"gangbu/pkg/e"
 	"gangbu/pkg/models"
 	"gangbu/pkg/util"
+	"gangbu/proto"
 	"github.com/bwmarrin/discordgo"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"io"
 	"net/http"
 	"strconv"
@@ -16,8 +19,18 @@ import (
 	"time"
 )
 
+var grc proto.GameRequestClient
+
+type botHandler struct {
+}
+
+func NewBotHandler(gs proto.GameRequestClient) *botHandler {
+	grc = gs
+	return &botHandler{}
+}
+
 // AddAllHandlers add all handlers
-func AddAllHandlers(session *discordgo.Session) {
+func (h *botHandler) AddAllHandlers(session *discordgo.Session) {
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			h(s, i)
@@ -196,46 +209,15 @@ var (
 		},
 		"history": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// 展示用户信息
-			url := "http://127.0.0.1:8989/v1/game-history-last-five/" + i.Member.User.ID
-			response, err := http.Get(url)
+			historyDtoSlice, err := grc.GetLastFiveGameHistoryByDiscordId(context.Background(), &wrapperspb.StringValue{Value: i.Member.User.ID})
 			if err != nil {
-				util.Logger.Error("发起请求时出错:", err)
+				util.Logger.Error("获取游戏记录失败", err)
 				return
 			}
-			defer response.Body.Close()
-			body, err := io.ReadAll(response.Body)
-			if err != nil {
-				util.Logger.Error("读取响应时出错:", err)
-				return
-			}
-			responseData := app.Response{}
-			err = json.Unmarshal(body, &responseData)
-			if err != nil {
-				util.Logger.Error("json反序列化失败:", err)
-				return
-			}
-			if responseData.Code != e.SUCCESS {
-				util.Logger.Error("调用showInfo接口失败！原因：", responseData.Data)
-				content := fmt.Sprintf("Invoke game failed! please try again! reason: %v", responseData.Data)
-				err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: content,
-						Flags:   discordgo.MessageFlagsEphemeral,
-					},
-				})
-				if err != nil {
-					util.Logger.Error(err)
-					return
-				}
-				return
-			}
-			marshal, _ := json.Marshal(responseData.Data)
-			var hisSlice []*models.GameHistory
-			_ = json.Unmarshal(marshal, &hisSlice)
-
+			hisSlice := historyDtoSlice.Histories
 			msgEmbeds := make([]*discordgo.MessageEmbed, 0)
 			for _, his := range hisSlice {
+				finishTime := time.Unix(his.FinishTime.GetSeconds(), 0)
 				result := his.GameResult
 				value := util.WeiToEther(his.BetValue)
 				gameResultStr := ""
@@ -265,7 +247,7 @@ var (
 						},
 						{
 							Name:   "Play Time",
-							Value:  his.FinishTime.Format("2006-01-02 15:04:05 MST"),
+							Value:  finishTime.Format("2006-01-02 15:04:05 MST"),
 							Inline: true,
 						},
 					},

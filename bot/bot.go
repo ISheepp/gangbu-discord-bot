@@ -6,17 +6,21 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 )
 
 // Run bot running
-func Run() {
+func Run(wg *sync.WaitGroup) {
+	wg.Wait()
 	discord := util.GetDiscordClient()
 
+	client, err := util.GetGrpcClient("127.0.0.1:8989")
 	// Add event handler
-	handler.AddAllHandlers(discord)
+	botHandler := handler.NewBotHandler(client)
+	botHandler.AddAllHandlers(discord)
 
 	// Open session
-	err := discord.Open()
+	err = discord.Open()
 	if err != nil {
 		log.Fatal("Cannot open Discord session: ", err)
 	}

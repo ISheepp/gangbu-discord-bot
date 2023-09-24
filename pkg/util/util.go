@@ -2,14 +2,20 @@ package util
 
 import (
 	"crypto/ecdsa"
+	"fmt"
+	"gangbu/proto"
 	"github.com/bwmarrin/discordgo"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 )
 
 func GetDiscordClient() *discordgo.Session {
@@ -27,6 +33,37 @@ func GetDiscordClient() *discordgo.Session {
 		}
 	}
 	return discord
+}
+
+func StartGrpcServer(wg *sync.WaitGroup, srv proto.GameRequestServer) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	s := grpc.NewServer()
+	// 注册服务
+	proto.RegisterGameRequestServer(s, srv)
+	// 启动RPC并监听
+	log.Printf("server listening at %v", lis.Addr())
+	wg.Done()
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
+}
+
+func GetGrpcClient(addr string) (proto.GameRequestClient, error) {
+	// grpc client
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// todo 记得要关闭conn
+	if err != nil {
+		log.Fatalf("连接服务器失败: %v", err)
+	}
+	log.Printf("建立连接成功: %s", addr)
+
+	// 创建客户端
+	client := proto.NewGameRequestClient(conn)
+	return client, err
 }
 
 func StringToPrivateKey(privateKeyStr string) (*ecdsa.PrivateKey, error) {

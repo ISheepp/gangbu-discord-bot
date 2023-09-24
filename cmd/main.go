@@ -6,19 +6,39 @@
 package main
 
 import (
+	"context"
 	"gangbu/bot"
+	_gameRepo "gangbu/game/repository/mysql"
+	"gangbu/game/server"
+	_gameUsecase "gangbu/game/usecase"
 	"gangbu/pkg/db"
 	"gangbu/pkg/util"
-	"gangbu/route"
+	_playerRepo "gangbu/player/repository/mysql"
+	_playerUsecase "gangbu/player/usecase"
 	_ "github.com/joho/godotenv/autoload"
-	"os"
+	"sync"
 )
 
 func main() {
-	go bot.Run()
-	r := route.NewRouter()
-	util.Logger.Info("web server is running at http://localhost:8989")
-	_ = r.Run(os.Getenv("PORT"))
+	// start grpc server
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		util.Logger.Info("start grpc server")
+		dbClient := db.NewDBClient(context.Background())
+		playerRepository := _playerRepo.NewPlayerRepository(dbClient)
+		gameHistoryRepository := _gameRepo.NewGameHistoryRepository()
+		gameUsecase := _gameUsecase.NewGameUsecase(gameHistoryRepository, playerRepository, dbClient)
+		playerUsecase := _playerUsecase.NewPlayerUsecase(playerRepository)
+
+		gameServer := server.NewGameServer(gameUsecase, playerUsecase)
+		util.StartGrpcServer(wg, gameServer)
+		//r := route.NewRouter()
+		util.Logger.Info("GRPC server is running at http://localhost:8989")
+	}()
+	//_ = r.Run(os.Getenv("PORT"))
+	go bot.Run(wg)
+	select {}
 }
 
 func init() {
