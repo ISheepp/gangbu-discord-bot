@@ -51,3 +51,5 @@ package gangbu/cmd
 	imports gangbu/pkg/queue
 	imports gangbu/pkg/util: import cycle not allowed
 ```
+
+循环依赖报错
