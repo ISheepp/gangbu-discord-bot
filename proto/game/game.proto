@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "proto/game";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service GameRequest {
+  // 创建一次bet
+  rpc CreateGame(GameCreateBo) returns(google.protobuf.StringValue){}
+  // 获取最近5条游戏记录
+  rpc GetLastFiveGameHistoryByDiscordId(google.protobuf.StringValue) returns(GameHistoryDtoSlice){}
+  // 发送消息
+  rpc SendCallbackMessage(CallbackMessage) returns(google.protobuf.Empty){}
+}
+
+message GameCreateBo {
+  string player_discord_user_id = 1;
+  uint32 choice = 2;
+  int64  bet_value = 3;
+  string guild_id = 4;
+  string channel_id = 5;
+}
+
+message GameHistoryDto {
+  bool game_result = 1;
+  int64 bet_value = 2;
+  google.protobuf.Timestamp finish_time = 3;
+}
+
+message GameHistoryDtoSlice {
+  repeated GameHistoryDto histories = 1;
+}
+
+enum CallbackMessageType {
+  ERROR = 0;
+  SUCCESS = 1;
+}
+
+message CallbackMessage {
+  string message = 1;
+  string data = 2;
+  CallbackMessageType type = 3;
+  string channel_id = 4;
+  string player_discord_user_id = 5;
+}

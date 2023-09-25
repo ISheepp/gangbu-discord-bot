@@ -20,7 +20,7 @@ func (ghr *gameHistoryRepository) GetLastFiveGameHistoryByDiscordId(discordId st
 
 func (ghr *gameHistoryRepository) GetGameHistoryByDiscordId(discordId string, db *gorm.DB) ([]models.GameHistory, error) {
 	var gh []models.GameHistory
-	result := db.Where("player_discord_user_id = ?", discordId).Find(&gh)
+	result := db.Where("player_discord_user_id = ? and finish_time is not null", discordId).Find(&gh)
 	if result.Error != nil {
 		return nil, result.Error
 	}

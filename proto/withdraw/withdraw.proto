@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "proto/withdraw";
+
+import "google/protobuf/wrappers.proto";
+
+service WithdrawRequest {
+  // 根据discordId和钱包地址来提现
+  rpc Withdraw(WithdrawBo) returns(google.protobuf.StringValue){}
+}
+
+message WithdrawBo {
+  string discord_user_id = 1;
+  string withdraw_address = 3;
+}

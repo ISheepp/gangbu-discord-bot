@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func NewKafkaWriter() (*kafka.Writer, error) {
+func NewKafkaWriter(topic string) (*kafka.Writer, error) {
 	mechanism, err := scram.Mechanism(scram.SHA256, os.Getenv("KAFKA_USERNAME"), os.Getenv("KAFKA_PASSWORD"))
 	if err != nil {
 		util.Logger.Error("创建kafka writer失败", err)
@@ -22,7 +22,7 @@ func NewKafkaWriter() (*kafka.Writer, error) {
 
 	w := &kafka.Writer{
 		Addr:      kafka.TCP(os.Getenv("KAFKA_URL")),
-		Topic:     "game",
+		Topic:     topic,
 		Balancer:  &kafka.Hash{},
 		Transport: sharedTransport,
 		Logger:    util.Logger,
@@ -31,7 +31,7 @@ func NewKafkaWriter() (*kafka.Writer, error) {
 
 }
 
-func NewKafkaReader() (*kafka.Reader, error) {
+func NewKafkaReader(topic string, group string) (*kafka.Reader, error) {
 	mechanism, err := scram.Mechanism(scram.SHA256, os.Getenv("KAFKA_USERNAME"), os.Getenv("KAFKA_PASSWORD"))
 	if err != nil {
 		util.Logger.Error("创建kafka reader失败", err)
@@ -45,8 +45,8 @@ func NewKafkaReader() (*kafka.Reader, error) {
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     []string{os.Getenv("KAFKA_URL")},
-		GroupID:     "test-1",
-		Topic:       "game",
+		GroupID:     group,
+		Topic:       topic,
 		Dialer:      dialer,
 		ErrorLogger: util.Logger,
 	})

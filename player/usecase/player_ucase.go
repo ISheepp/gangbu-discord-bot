@@ -19,16 +19,23 @@ type playerUsecase struct {
 	playerRepo models.PlayerRepository
 }
 
+func NewPlayerUsecase(pr models.PlayerRepository) models.PlayerUsecase {
+	return &playerUsecase{playerRepo: pr}
+}
+
 func (pu *playerUsecase) GetByDiscordUserID(discordUserID string) (*models.Player, error) {
 	player, err := pu.playerRepo.GetByDiscordUserID(discordUserID)
 	if err != nil {
+		util.Logger.Error("获取玩家失败!", err)
 		return nil, err
 	}
+	walletValue, err := getWalletValueFromChain(player)
+	if err != nil {
+		util.Logger.Error("获取钱包余额失败!", err)
+		return nil, err
+	}
+	player.WalletValue = walletValue.Int64()
 	return player, nil
-}
-
-func NewPlayerUsecase(pr models.PlayerRepository) models.PlayerUsecase {
-	return &playerUsecase{playerRepo: pr}
 }
 
 func (pu *playerUsecase) GetByDiscordUserIDOrCreate(discordUserID string) (*models.PlayerVo, error) {
@@ -63,25 +70,6 @@ func (pu *playerUsecase) GetByDiscordUserIDOrCreate(discordUserID string) (*mode
 	return res, nil
 }
 
-func getWalletValueFromChain(player *models.Player) (*big.Int, error) {
-	start := time.Now()
-	eth, err := ethclient.Dial(os.Getenv("ALCHEMY_URL"))
-	if err != nil {
-		util.Logger.Error("连接到以太坊节点失败!", err)
-		return nil, err
-	}
-	defer eth.Close()
-	// 查询地址的余额
-	balanceAt, err := eth.BalanceAt(context.Background(), common.HexToAddress(player.WalletAddress), nil)
-	if err != nil {
-		util.Logger.Error("查询余额失败!", err)
-		return nil, err
-	}
-	end := time.Now()
-	util.Logger.Info("查询余额耗时:", end.Sub(start))
-	return balanceAt, nil
-}
-
 func (pu *playerUsecase) CreatePlayer(bo models.PlayerCreateBo) error {
 	// 生成随机私钥
 	privateKey, err := crypto.GenerateKey()
@@ -109,4 +97,23 @@ func (pu *playerUsecase) CreatePlayer(bo models.PlayerCreateBo) error {
 		return e
 	}
 	return nil
+}
+
+func getWalletValueFromChain(player *models.Player) (*big.Int, error) {
+	start := time.Now()
+	eth, err := ethclient.Dial(os.Getenv("ALCHEMY_URL"))
+	if err != nil {
+		util.Logger.Error("连接到以太坊节点失败!", err)
+		return nil, err
+	}
+	defer eth.Close()
+	// 查询地址的余额
+	balanceAt, err := eth.BalanceAt(context.Background(), common.HexToAddress(player.WalletAddress), nil)
+	if err != nil {
+		util.Logger.Error("查询余额失败!", err)
+		return nil, err
+	}
+	end := time.Now()
+	util.Logger.Info("查询余额耗时:", end.Sub(start))
+	return balanceAt, nil
 }

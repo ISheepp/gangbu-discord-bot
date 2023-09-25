@@ -83,7 +83,6 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) (*types.Trans
 	}
 
 	// 检查用户游戏内地址的余额是否大于筹码
-	// todo 数据库里的数据如何实时更新？？
 	balance, err := client.BalanceAt(context.Background(), common.HexToAddress(user.WalletAddress), nil)
 	if err != nil {
 		util.Logger.Error("查询用户余额失败!", err)
@@ -105,6 +104,14 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) (*types.Trans
 		tx.Rollback()
 		return nil, err
 	}
+	// bet value 不能大于合约的余额
+	contractBalance, err := client.BalanceAt(context.Background(), contractAddress, nil)
+	if bo.BetValue > contractBalance.Int64() {
+		util.Logger.Error("合约余额不足!")
+		tx.Rollback()
+		return nil, errors.New("合约余额不足: 余额:" + contractBalance.String() + "; 用户筹码:" + strconv.Itoa(int(bo.BetValue)))
+	}
+
 	// 签名对象
 	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
 	// 创建私钥（用于签名交易）
@@ -148,14 +155,6 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) (*types.Trans
 		return nil, err
 	}
 	tx.Commit()
-	// todo 先不等待交易完成
-	// txReceipt, err := bind.WaitMined(context.Background(), client, blockTx)
-	// if err != nil {
-	// 	util.Logger.Error("等待交易失败!", err)
-	// 	tx.Rollback()
-	// 	return nil, err
-	// }
-	// util.Logger.Info("请求随机数完成!", txReceipt.TxHash.Hex())
 	return blockTx, nil
 }
 

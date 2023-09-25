@@ -1,31 +1,23 @@
 package handler
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"gangbu/pkg/app"
-	"gangbu/pkg/e"
-	"gangbu/pkg/models"
 	"gangbu/pkg/util"
-	"gangbu/proto"
+	"gangbu/proto/game"
+	"gangbu/proto/player"
+	"gangbu/proto/withdraw"
 	"github.com/bwmarrin/discordgo"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	"io"
-	"net/http"
+	"os"
 	"strconv"
-	"strings"
 	"time"
 )
-
-var grc proto.GameRequestClient
 
 type botHandler struct {
 }
 
-func NewBotHandler(gs proto.GameRequestClient) *botHandler {
-	grc = gs
+func NewBotHandler() *botHandler {
 	return &botHandler{}
 }
 
@@ -38,89 +30,60 @@ func (h *botHandler) AddAllHandlers(session *discordgo.Session) {
 	})
 }
 
-// newMessage 第二个参数是侦听的事件类型
-func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
-
-	// Ignore bot messaage
-	if message.Author.ID == discord.State.User.ID {
-		return
-	}
-
-	// Respond to messages
-	switch {
-	case strings.Contains(message.Content, "weather"):
-		discord.ChannelMessageSend(message.ChannelID, "I can help with that!")
-	case strings.Contains(message.Content, "bot"):
-		discord.ChannelMessageSend(message.ChannelID, "Hi there!")
-	}
-}
-
 var (
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// 调用后端/play接口，传递GuildID和ChannelID
 			interactionData := i.Data.(discordgo.ApplicationCommandInteractionData)
 			choice := interactionData.Options[0].Value.(float64)
 			f := interactionData.Options[1].Value.(float64)
+			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
+			if err != nil {
+				util.Logger.Error("连接服务器失败: %v", err)
+				failedContent(s, i, "link to server failed")
+				return
+			}
+			grc := game.NewGameRequestClient(conn)
 
-			gameBo := models.GameHistoryBo{
-				PlayerDiscordUserId: i.Member.User.ID,
-				Choice:              uint8(choice),
-				BetValue:            util.EtherToWei(f),
-				GuildID:             i.GuildID,
-				ChannelID:           i.ChannelID,
-			}
-			req, err := json.Marshal(gameBo)
-			if err != nil {
-				util.Logger.Error("json序列化失败", err)
-				return
-			}
-			url := "http://127.0.0.1:8989/v1/play"
-			request, err := http.NewRequest("POST", url, bytes.NewBuffer(req))
-			if err != nil {
-				util.Logger.Error("创建post请求出错：", err)
-				return
-			}
-			request.Header.Set("Content-Type", "application/json")
-			client := &http.Client{}
 			go func() {
-				response, err := client.Do(request)
+				txHash, err := grc.CreateGame(context.Background(), &game.GameCreateBo{
+					PlayerDiscordUserId: i.Member.User.ID,
+					Choice:              uint32(choice),
+					BetValue:            util.EtherToWei(f),
+					GuildId:             i.GuildID,
+					ChannelId:           i.ChannelID,
+				})
 				if err != nil {
-					util.Logger.Error("发起请求时出错:", err)
+					util.Logger.Error("创建游戏失败!", err)
+					// 发送到kafka 由kafka来发送消息
+					_, err := grc.SendCallbackMessage(context.Background(), &game.CallbackMessage{
+						Message:             "create game failed!" + " reason: " + err.Error(),
+						Data:                "",
+						Type:                game.CallbackMessageType_ERROR,
+						ChannelId:           i.ChannelID,
+						PlayerDiscordUserId: i.Member.User.ID,
+					})
+					if err != nil {
+						util.Logger.Error("发送回调消息失败!", err)
+					}
 					return
 				}
-				defer response.Body.Close()
+				// 发送到kafka
+				_, err = grc.SendCallbackMessage(context.Background(), &game.CallbackMessage{
+					Message:             "create game success!",
+					Data:                txHash.Value,
+					Type:                game.CallbackMessageType_SUCCESS,
+					ChannelId:           i.ChannelID,
+					PlayerDiscordUserId: i.Member.User.ID,
+				})
+				if err != nil {
+					util.Logger.Error("发送回调消息失败!", err)
+				}
+				err = conn.Close()
+				if err != nil {
+					util.Logger.Error("关闭连接失败", err)
+				}
 			}()
-
-			// 读取响应内容 todo 不读取返回，后续解决异常处理，因为discord只能响应3s内的数据
-			// body, err := io.ReadAll(response.Body)
-			// if err != nil {
-			// 	fmt.Println("读取响应时出错:", err)
-			// 	return
-			// }
-			// responseData := app.Response{}
-			// err = json.Unmarshal(body, &responseData)
-			// if err != nil {
-			// 	util.Logger.Error("json反序列化失败:", err)
-			// 	return
-			// }
-			// if responseData.Code != e.SUCCESS {
-			// 	util.Logger.Error("调用play接口失败！原因：", responseData.Data)
-			// 	content := fmt.Sprintf("Invoke game failed! please try again! reason: %v", responseData.Data)
-			// 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			// 		Type: discordgo.InteractionResponseChannelMessageWithSource,
-			// 		Data: &discordgo.InteractionResponseData{
-			// 			Content: content,
-			// 			Flags:   discordgo.MessageFlagsEphemeral,
-			// 		},
-			// 	})
-			// 	if err != nil {
-			// 		util.Logger.Error(err)
-			// 		return
-			// 	}
-			// 	return
-			// }
-			// etherscanUrl := "https://goerli.etherscan.io/tx/" + responseData.Data.(string)
+			// requestRandomTxUrl := "https://goerli.etherscan.io/tx/" + txHash.String()
 			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
@@ -128,7 +91,6 @@ var (
 					Flags:   discordgo.MessageFlagsEphemeral,
 				},
 			})
-
 			if err != nil {
 				util.Logger.Error(err)
 				return
@@ -136,44 +98,26 @@ var (
 		},
 		"show": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// 展示用户信息
-			url := "http://127.0.0.1:8989/v1/player/" + i.Member.User.ID
-			response, err := http.Get(url)
+			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
 			if err != nil {
-				util.Logger.Error("发起请求时出错:", err)
+				util.Logger.Error("连接服务器失败: %v", err)
+				failedContent(s, i, "link to server failed")
 				return
 			}
-			defer response.Body.Close()
-			body, err := io.ReadAll(response.Body)
-			if err != nil {
-				util.Logger.Error("读取响应时出错:", err)
-				return
-			}
-			responseData := app.Response{}
-			err = json.Unmarshal(body, &responseData)
-			if err != nil {
-				util.Logger.Error("json反序列化失败:", err)
-				return
-			}
-			if responseData.Code != e.SUCCESS {
-				util.Logger.Error("调用showInfo接口失败！原因：", responseData.Data)
-				content := fmt.Sprintf("Invoke game failed! please try again! reason: %v", responseData.Data)
-				err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: content,
-						Flags:   discordgo.MessageFlagsEphemeral,
-					},
-				})
+			defer func(conn *grpc.ClientConn) {
+				err := conn.Close()
 				if err != nil {
 					util.Logger.Error(err)
-					return
 				}
+			}(conn)
+			grc := player.NewPlayerRequestClient(conn)
+			playerInfo, err := grc.ShowPlayerInfo(context.Background(), &wrapperspb.StringValue{Value: i.Member.User.ID})
+			if err != nil {
+				util.Logger.Error("查询玩家信息失败!", err)
+				failedContent(s, i, "query player info failed")
 				return
 			}
-			result := responseData.Data.(map[string]interface{})
-			sourceData := result["WalletValue"].(float64)
-			// float64转int64
-			ether := util.WeiToEther(int64(sourceData))
+			ether := util.WeiToEther(playerInfo.WalletValue)
 			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
@@ -191,7 +135,7 @@ var (
 							Fields: []*discordgo.MessageEmbedField{
 								{
 									Name:  "Wallet Address",
-									Value: result["WalletAddress"].(string),
+									Value: playerInfo.WalletAddress,
 								},
 								{
 									Name:  "Wallet Value",
@@ -209,6 +153,20 @@ var (
 		},
 		"history": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// 展示用户信息
+
+			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
+			if err != nil {
+				util.Logger.Error("连接服务器失败: %v", err)
+				failedContent(s, i, "link to server failed")
+				return
+			}
+			defer func(conn *grpc.ClientConn) {
+				err := conn.Close()
+				if err != nil {
+					util.Logger.Error(err)
+				}
+			}(conn)
+			grc := game.NewGameRequestClient(conn)
 			historyDtoSlice, err := grc.GetLastFiveGameHistoryByDiscordId(context.Background(), &wrapperspb.StringValue{Value: i.Member.User.ID})
 			if err != nil {
 				util.Logger.Error("获取游戏记录失败", err)
@@ -271,41 +229,29 @@ var (
 			// 提款
 			interactionData := i.Data.(discordgo.ApplicationCommandInteractionData)
 			receive := interactionData.Options[0].Value.(string)
-			url := fmt.Sprintf("http://127.0.0.1:8989/v1/withdraw/%s/receive/%s", i.Member.User.ID, receive)
-			response, err := http.Get(url)
+			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
 			if err != nil {
-				util.Logger.Error("发起请求时出错:", err)
+				util.Logger.Error("连接服务器失败: %v", err)
+				failedContent(s, i, "link to server failed")
 				return
 			}
-			defer response.Body.Close()
-			body, err := io.ReadAll(response.Body)
-			if err != nil {
-				util.Logger.Error("读取响应时出错:", err)
-				return
-			}
-			responseData := app.Response{}
-			err = json.Unmarshal(body, &responseData)
-			if err != nil {
-				util.Logger.Error("json反序列化失败:", err)
-				return
-			}
-			if responseData.Code != e.SUCCESS {
-				util.Logger.Error("调用withdraw接口失败！原因：", responseData.Data)
-				content := fmt.Sprintf("Invoke game failed! please try again! reason: %v", responseData.Data)
-				err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Content: content,
-						Flags:   discordgo.MessageFlagsEphemeral,
-					},
-				})
+			defer func(conn *grpc.ClientConn) {
+				err := conn.Close()
 				if err != nil {
 					util.Logger.Error(err)
-					return
 				}
+			}(conn)
+			wrc := withdraw.NewWithdrawRequestClient(conn)
+			txHash, err := wrc.Withdraw(context.Background(), &withdraw.WithdrawBo{
+				DiscordUserId:   i.Member.User.ID,
+				WithdrawAddress: receive,
+			})
+			if err != nil {
+				util.Logger.Error(err)
+				failedContent(s, i, "withdraw failed, reason: "+err.Error())
 				return
 			}
-			txId := responseData.Data.(string)
+			txId := txHash.GetValue()
 			txUrl := "https://goerli.etherscan.io/tx/" + txId
 			err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -336,3 +282,18 @@ var (
 		},
 	}
 )
+
+// failedContent sends an error message to the user
+func failedContent(s *discordgo.Session, i *discordgo.InteractionCreate, content string) {
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: content,
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		util.Logger.Error(err)
+	}
+	return
+}

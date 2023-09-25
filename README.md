@@ -39,3 +39,15 @@ google/protobuf/wrappers.proto，空类型google/protobuf/empty.proto
 ## warning
 
 discord slash command 只有3s的时间给后端响应
+
+## question
+
+```bash
+package gangbu/cmd
+	imports gangbu/bot
+	imports gangbu/bot/handler
+	imports gangbu/pkg/util
+	imports gangbu/game/listener
+	imports gangbu/pkg/queue
+	imports gangbu/pkg/util: import cycle not allowed
+```

@@ -8,10 +8,12 @@ import (
 	"gangbu/pkg/models"
 	"gangbu/pkg/queue"
 	"gangbu/pkg/util"
+	"gangbu/proto/game"
 	"github.com/bwmarrin/discordgo"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 )
@@ -26,14 +28,16 @@ func NewKafkaListener(pu models.PlayerUsecase) Listener {
 
 func (k *kafkaListener) StartListen() {
 	go ListenGameDoneHistory(k)
+	go ListenCreateGameResult(k)
 }
 
+// ListenGameDoneHistory 监听游戏结束
 func ListenGameDoneHistory(k *kafkaListener) {
-	reader, err := queue.NewKafkaReader()
+	reader, err := queue.NewKafkaReader("game", "test-1")
 	if err != nil {
 		util.Logger.Error("创建kafka reader失败", err)
 	}
-	util.Logger.Info("开始监听kafka")
+	util.Logger.Info("开始监听kafka, topic: game")
 	for {
 		msg, err := reader.ReadMessage(context.Background())
 		if err != nil {
@@ -41,14 +45,14 @@ func ListenGameDoneHistory(k *kafkaListener) {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		game := &models.GameHistory{}
-		err = json.Unmarshal(msg.Value, game)
+		gameHis := &models.GameHistory{}
+		err = json.Unmarshal(msg.Value, gameHis)
 		if err != nil {
 			util.Logger.Error("kafka reader解析消息失败", err)
 			continue
 		}
 		// 发送到discord服务器
-		go pushMsgToDiscord(k, game)
+		go pushMsgToDiscord(k, gameHis)
 
 	}
 }
@@ -156,5 +160,67 @@ func pushMsgToDiscord(k *kafkaListener, game *models.GameHistory) {
 	})
 	if err != nil {
 		util.Logger.Error("发送游戏结果消息失败", err)
+	}
+}
+
+func pushGameCreateResultToDiscord(k *kafkaListener, g *game.CallbackMessage) {
+	discord := util.GetDiscordClient()
+	defer discord.Close()
+	// 发送消息
+	content := fmt.Sprintf(" <@%s>", g.PlayerDiscordUserId)
+	requestRandomTxUrl := "https://goerli.etherscan.io/tx/" + g.GetData()
+	components := []discordgo.MessageComponent{
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.Button{
+					Emoji: discordgo.ComponentEmoji{
+						Name: "📜",
+					},
+					Label: "Etherscan:Request",
+					Style: discordgo.LinkButton,
+					URL:   requestRandomTxUrl,
+				},
+			},
+		},
+	}
+	i := reflect.ValueOf(g.Type).Interface()
+
+	if game.CallbackMessageType_ERROR == i {
+		components = []discordgo.MessageComponent{}
+	}
+	_, err := discord.ChannelMessageSendComplex(g.ChannelId, &discordgo.MessageSend{
+		Content:    g.Message + content,
+		Components: components,
+		AllowedMentions: &discordgo.MessageAllowedMentions{
+			Users: []string{g.PlayerDiscordUserId},
+		},
+	})
+	if err != nil {
+		util.Logger.Error("发送游戏结果消息失败", err)
+	}
+}
+
+func ListenCreateGameResult(k *kafkaListener) {
+	reader, err := queue.NewKafkaReader("callback_msg", "test-2")
+	if err != nil {
+		util.Logger.Error("创建kafka reader失败", err)
+	}
+	util.Logger.Info("开始监听kafka, topic: callback_msg")
+	for {
+		msg, err := reader.ReadMessage(context.Background())
+		if err != nil {
+			util.Logger.Error("kafka reader读取消息失败", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		g := &game.CallbackMessage{}
+		err = json.Unmarshal(msg.Value, g)
+		if err != nil {
+			util.Logger.Error("kafka reader解析消息失败", err)
+			continue
+		}
+		// 发送到discord服务器
+		go pushGameCreateResultToDiscord(k, g)
+
 	}
 }

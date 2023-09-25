@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "proto/player";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+service PlayerRequest {
+  // 根据discordId展示玩家信息
+  rpc ShowPlayerInfo(google.protobuf.StringValue) returns(PlayerInfoVo){}
+}
+
+message PlayerInfoVo {
+  uint64 id = 1;
+  string discord_user_id = 2;
+  string wallet_address = 3;
+  int64 wallet_value = 4;
+  google.protobuf.Timestamp create_at = 5;
+}

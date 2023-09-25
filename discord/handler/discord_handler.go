@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gangbu/discord/usecase"
 	"gangbu/pkg/e"
+	"gangbu/pkg/util"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 )
 
@@ -25,7 +25,7 @@ func (dh *discordHandler) showAllCommands() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		commands, err := usecase.ShowAllCommands()
 		if err != nil {
-			log.Println("show all commands failed!", err)
+			util.Logger.Println("show all commands failed!", err)
 			c.JSON(http.StatusInternalServerError, &e.ResponseData{
 				Message: err.Error(),
 				Status:  false,
@@ -46,7 +46,7 @@ func (dh *discordHandler) deleteCommand() gin.HandlerFunc {
 		id := c.Param("id")
 		err := usecase.DeleteCommand(id)
 		if err != nil {
-			log.Println("delete command failed!", err)
+			util.Logger.Println("delete command failed!", err)
 			c.JSON(http.StatusInternalServerError, &e.ResponseData{
 				Message: err.Error(),
 				Status:  false,
@@ -67,7 +67,7 @@ func (dh *discordHandler) createCommand() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := usecase.CreateCommand()
 		if err != nil {
-			log.Println("create command failed!", err)
+			util.Logger.Println("create command failed!", err)
 			c.JSON(http.StatusInternalServerError, &e.ResponseData{
 				Message: err.Error(),
 				Status:  false,

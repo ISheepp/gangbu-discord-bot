@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/segmentio/kafka-go"
-	"log"
 	"math/big"
 	"os"
 	"strconv"
@@ -39,7 +38,7 @@ func (cl *chainListener) StartListen() {
 func (cl *chainListener) RequestRandomListener() {
 	client, err := ethclient.Dial(os.Getenv("ALCHEMY_WEBSOCKET_URL"))
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 	defer client.Close()
 
@@ -54,12 +53,12 @@ func (cl *chainListener) RequestRandomListener() {
 	logs := make(chan types.Log)
 	_, err = client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 
 	filterer, err := models.NewEvenOddGameFilterer(common.HexToAddress(os.Getenv("CONTRACT_ADDRESS")), client)
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 	channel := make(chan *models.EvenOddGameRequestSent)
 	sub, err := filterer.WatchRequestSent(&bind.WatchOpts{
@@ -67,7 +66,7 @@ func (cl *chainListener) RequestRandomListener() {
 		Context: nil,
 	}, channel)
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 	util.Logger.Info("开始监听主合约事件")
 	for {
@@ -104,7 +103,7 @@ func (cl *chainListener) RequestRandomListener() {
 func (cl *chainListener) ChainLinkGenerateRandomListener() {
 	client, err := ethclient.Dial(os.Getenv("ALCHEMY_WEBSOCKET_URL"))
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 	defer client.Close()
 
@@ -119,12 +118,12 @@ func (cl *chainListener) ChainLinkGenerateRandomListener() {
 	logs := make(chan types.Log)
 	_, err = client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 
 	filterer, err := models.NewVRFCoordinatorV2Filterer(common.HexToAddress(os.Getenv("CONTRACT_ADDRESS")), client)
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 	channel := make(chan *models.VRFCoordinatorV2RequestFulfilled)
 	sub, err := filterer.WatchRequestFulfilled(&bind.WatchOpts{
@@ -132,7 +131,7 @@ func (cl *chainListener) ChainLinkGenerateRandomListener() {
 		Context: nil,
 	}, channel)
 	if err != nil {
-		log.Fatal(err)
+		util.Logger.Fatal(err)
 	}
 	util.Logger.Info("开始监听VRF事件")
 	for {
@@ -228,7 +227,7 @@ func invokeMainBet(event *models.VRFCoordinatorV2RequestFulfilled, cl *chainList
 		util.Logger.Error("更新game失败!", err)
 	}
 	// 推送结果到kafka
-	writer, err := queue.NewKafkaWriter()
+	writer, err := queue.NewKafkaWriter("game")
 	if err != nil {
 		util.Logger.Error("创建kafka writer失败!", err)
 		return
