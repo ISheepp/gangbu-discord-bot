@@ -92,7 +92,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) (*types.Trans
 	if balance.Cmp(big.NewInt(bo.BetValue)) < 0 {
 		util.Logger.Error("用户余额不足!")
 		tx.Rollback()
-		return nil, errors.New("用户余额不足: 当前余额：" + balance.String())
+		return nil, errors.New("Insufficient user balance: current balance: " + balance.String())
 	}
 
 	// 合约地址
@@ -109,7 +109,7 @@ func (ghu *gameHistoryUsecase) CreateGame(bo models.GameHistoryBo) (*types.Trans
 	if bo.BetValue > contractBalance.Int64() {
 		util.Logger.Error("合约余额不足!")
 		tx.Rollback()
-		return nil, errors.New("合约余额不足: 余额:" + contractBalance.String() + "; 用户筹码:" + strconv.Itoa(int(bo.BetValue)))
+		return nil, errors.New("Insufficient contract balance: current balance:" + contractBalance.String() + "; User bet value:" + strconv.Itoa(int(bo.BetValue)))
 	}
 
 	// 签名对象
