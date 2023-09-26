@@ -24,8 +24,8 @@ func main() {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	util.Logger.Info("stopping...")
 	<-c
+	util.Logger.Info("stopping server...")
 }
 
 func init() {

@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"gangbu/pkg/models"
-	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -19,7 +18,7 @@ func MySQLInit() {
 	dbInfo := []string{os.Getenv("DB_USER"), ":", os.Getenv("DB_PASSWORD"), "@tcp(", os.Getenv("DB_HOST"), ":", os.Getenv("DB_PORT"), ")/", os.Getenv("DB_SCHEMA"), "?tls=true&interpolateParams=true&charset=utf8&parseTime=true"}
 	conn := strings.Join(dbInfo, "")
 	var ormLogger logger.Interface
-	if gin.Mode() == "debug" {
+	if os.Getenv("ENV") == "dev" {
 		ormLogger = logger.Default.LogMode(logger.Info)
 	} else {
 		ormLogger = logger.Default
