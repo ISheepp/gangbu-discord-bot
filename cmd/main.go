@@ -13,18 +13,22 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 )
 
 func main() {
 	// start grpc server
 	wg := &sync.WaitGroup{}
+	ticker := time.NewTicker(4 * time.Second)
 	wg.Add(1)
 	go RunGrpcServer(wg)
 	go bot.Run(wg)
-
+	go ListenRenewChan(ticker, wg)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
+	ticker.Stop()
+	unRegistryFromRedis()
 	util.Logger.Info("stopping server...")
 }
 

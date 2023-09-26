@@ -7,6 +7,7 @@ import (
 	_gameRepo "gangbu/game/repository/mysql"
 	_gameServer "gangbu/game/server"
 	_gameUsecase "gangbu/game/usecase"
+	"gangbu/pkg/cache"
 	"gangbu/pkg/db"
 	"gangbu/pkg/util"
 	_playerRepo "gangbu/player/repository/mysql"
@@ -20,6 +21,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 )
 
 // RunGrpcServer 启动Grpc服务
@@ -55,7 +57,45 @@ func startGrpcServer(wg *sync.WaitGroup, grs game.GameRequestServer, prs player.
 	// 启动RPC并监听
 	util.Logger.Printf("server listening at %v", lis.Addr())
 	wg.Done()
+	// 注册地址到redis
+	registryToRedis()
 	if err = s.Serve(lis); err != nil {
 		util.Logger.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func registryToRedis() {
+	client := cache.NewRedisCache()
+	err := client.SetString(context.Background(), os.Getenv("GRPC_NAME"), os.Getenv("GRPC_ADDR"), 5*time.Second)
+	if err != nil {
+		util.Logger.Errorf("registry to redis error: %v", err)
+		return
+	}
+	util.Logger.Info("registry to redis")
+}
+
+func unRegistryFromRedis() {
+	client := cache.NewRedisCache()
+	err := client.DeleteString(context.Background(), os.Getenv("GRPC_NAME"))
+	if err != nil {
+		util.Logger.Errorf("unRegistry from redis error: %v", err)
+		return
+	}
+	util.Logger.Info("unRegistry from redis")
+}
+
+// ListenRenewChan 续约
+func ListenRenewChan(ticker *time.Ticker, wg *sync.WaitGroup) {
+	wg.Wait()
+	client := cache.NewRedisCache()
+	for {
+		select {
+		case <-ticker.C:
+			err := client.SetString(context.Background(), os.Getenv("GRPC_NAME"), os.Getenv("GRPC_ADDR"), 5*time.Second)
+			if err != nil {
+				util.Logger.Error("续约失败:", err)
+			}
+		}
+	}
+
 }

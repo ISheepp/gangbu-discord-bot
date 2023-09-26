@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"gangbu/pkg/cache"
 	"gangbu/pkg/util"
 	"gangbu/proto/game"
 	"gangbu/proto/player"
@@ -36,7 +37,13 @@ var (
 			interactionData := i.Data.(discordgo.ApplicationCommandInteractionData)
 			choice := interactionData.Options[0].Value.(float64)
 			f := interactionData.Options[1].Value.(float64)
-			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
+			addr, err := getGrpcAddr()
+			if err != nil {
+				util.Logger.Error("获取grpc地址失败: %v", err)
+				failedContent(s, i, "get grpc address failed")
+				return
+			}
+			conn, err := util.GetGrpcClientConn(addr)
 			if err != nil {
 				util.Logger.Error("连接服务器失败: %v", err)
 				failedContent(s, i, "link to server failed")
@@ -98,7 +105,13 @@ var (
 		},
 		"show": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// 展示用户信息
-			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
+			addr, err := getGrpcAddr()
+			if err != nil {
+				util.Logger.Error("获取grpc地址失败: %v", err)
+				failedContent(s, i, "get grpc address failed")
+				return
+			}
+			conn, err := util.GetGrpcClientConn(addr)
 			if err != nil {
 				util.Logger.Error("连接服务器失败: %v", err)
 				failedContent(s, i, "link to server failed")
@@ -153,8 +166,13 @@ var (
 		},
 		"history": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// 展示用户信息
-
-			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
+			addr, err := getGrpcAddr()
+			if err != nil {
+				util.Logger.Error("获取grpc地址失败: %v", err)
+				failedContent(s, i, "get grpc address failed")
+				return
+			}
+			conn, err := util.GetGrpcClientConn(addr)
 			if err != nil {
 				util.Logger.Error("连接服务器失败: %v", err)
 				failedContent(s, i, "link to server failed")
@@ -229,7 +247,13 @@ var (
 			// 提款
 			interactionData := i.Data.(discordgo.ApplicationCommandInteractionData)
 			receive := interactionData.Options[0].Value.(string)
-			conn, err := util.GetGrpcClientConn(os.Getenv("GRPC_ADDR"))
+			addr, err := getGrpcAddr()
+			if err != nil {
+				util.Logger.Error("获取grpc地址失败: %v", err)
+				failedContent(s, i, "get grpc address failed")
+				return
+			}
+			conn, err := util.GetGrpcClientConn(addr)
 			if err != nil {
 				util.Logger.Error("连接服务器失败: %v", err)
 				failedContent(s, i, "link to server failed")
@@ -296,4 +320,14 @@ func failedContent(s *discordgo.Session, i *discordgo.InteractionCreate, content
 		util.Logger.Error(err)
 	}
 	return
+}
+
+func getGrpcAddr() (string, error) {
+	client := cache.NewRedisCache()
+	addr, err := client.GetString(context.Background(), os.Getenv("GRPC_NAME"))
+	if err != nil {
+		util.Logger.Errorf("getGrpcAddr error: %v", err)
+		return "", err
+	}
+	return addr, nil
 }
