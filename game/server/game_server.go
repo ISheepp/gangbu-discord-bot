@@ -58,7 +58,7 @@ func (g *gameServer) CreateGame(ctx context.Context, bo *game.GameCreateBo) (*wr
 	})
 	if err != nil {
 		util.Logger.Error("创建游戏失败!", err)
-		return nil, status.Errorf(codes.Internal, "创建游戏失败!")
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	util.Logger.Info("创建游戏成功!")
 	return &wrapperspb.StringValue{Value: resp.Hash().Hex()}, nil
