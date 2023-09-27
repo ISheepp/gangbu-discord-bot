@@ -185,7 +185,7 @@ var (
 				}
 			}(conn)
 			grc := game.NewGameRequestClient(conn)
-			historyDtoSlice, err := grc.GetLastFiveGameHistoryByDiscordId(context.Background(), &wrapperspb.StringValue{Value: i.Member.User.ID})
+			historyDtoSlice, err := grc.GetLastFiveGameHistoryByDiscordIdFromTheGraph(context.Background(), &wrapperspb.StringValue{Value: i.Member.User.ID})
 			if err != nil {
 				util.Logger.Error("获取游戏记录失败", err)
 				return

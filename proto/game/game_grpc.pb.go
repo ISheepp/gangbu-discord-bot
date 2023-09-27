@@ -28,6 +28,8 @@ type GameRequestClient interface {
 	CreateGame(ctx context.Context, in *GameCreateBo, opts ...grpc.CallOption) (*wrapperspb.StringValue, error)
 	// 获取最近5条游戏记录
 	GetLastFiveGameHistoryByDiscordId(ctx context.Context, in *wrapperspb.StringValue, opts ...grpc.CallOption) (*GameHistoryDtoSlice, error)
+	// 从the graph获取最近5条游戏记录
+	GetLastFiveGameHistoryByDiscordIdFromTheGraph(ctx context.Context, in *wrapperspb.StringValue, opts ...grpc.CallOption) (*GameHistoryDtoSlice, error)
 	// 发送消息
 	SendCallbackMessage(ctx context.Context, in *CallbackMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -58,6 +60,15 @@ func (c *gameRequestClient) GetLastFiveGameHistoryByDiscordId(ctx context.Contex
 	return out, nil
 }
 
+func (c *gameRequestClient) GetLastFiveGameHistoryByDiscordIdFromTheGraph(ctx context.Context, in *wrapperspb.StringValue, opts ...grpc.CallOption) (*GameHistoryDtoSlice, error) {
+	out := new(GameHistoryDtoSlice)
+	err := c.cc.Invoke(ctx, "/proto.GameRequest/GetLastFiveGameHistoryByDiscordIdFromTheGraph", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gameRequestClient) SendCallbackMessage(ctx context.Context, in *CallbackMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/proto.GameRequest/SendCallbackMessage", in, out, opts...)
@@ -75,6 +86,8 @@ type GameRequestServer interface {
 	CreateGame(context.Context, *GameCreateBo) (*wrapperspb.StringValue, error)
 	// 获取最近5条游戏记录
 	GetLastFiveGameHistoryByDiscordId(context.Context, *wrapperspb.StringValue) (*GameHistoryDtoSlice, error)
+	// 从the graph获取最近5条游戏记录
+	GetLastFiveGameHistoryByDiscordIdFromTheGraph(context.Context, *wrapperspb.StringValue) (*GameHistoryDtoSlice, error)
 	// 发送消息
 	SendCallbackMessage(context.Context, *CallbackMessage) (*emptypb.Empty, error)
 	mustEmbedUnimplementedGameRequestServer()
@@ -89,6 +102,9 @@ func (UnimplementedGameRequestServer) CreateGame(context.Context, *GameCreateBo)
 }
 func (UnimplementedGameRequestServer) GetLastFiveGameHistoryByDiscordId(context.Context, *wrapperspb.StringValue) (*GameHistoryDtoSlice, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLastFiveGameHistoryByDiscordId not implemented")
+}
+func (UnimplementedGameRequestServer) GetLastFiveGameHistoryByDiscordIdFromTheGraph(context.Context, *wrapperspb.StringValue) (*GameHistoryDtoSlice, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLastFiveGameHistoryByDiscordIdFromTheGraph not implemented")
 }
 func (UnimplementedGameRequestServer) SendCallbackMessage(context.Context, *CallbackMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendCallbackMessage not implemented")
@@ -142,6 +158,24 @@ func _GameRequest_GetLastFiveGameHistoryByDiscordId_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameRequest_GetLastFiveGameHistoryByDiscordIdFromTheGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(wrapperspb.StringValue)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameRequestServer).GetLastFiveGameHistoryByDiscordIdFromTheGraph(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.GameRequest/GetLastFiveGameHistoryByDiscordIdFromTheGraph",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameRequestServer).GetLastFiveGameHistoryByDiscordIdFromTheGraph(ctx, req.(*wrapperspb.StringValue))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GameRequest_SendCallbackMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CallbackMessage)
 	if err := dec(in); err != nil {
@@ -174,6 +208,10 @@ var GameRequest_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLastFiveGameHistoryByDiscordId",
 			Handler:    _GameRequest_GetLastFiveGameHistoryByDiscordId_Handler,
+		},
+		{
+			MethodName: "GetLastFiveGameHistoryByDiscordIdFromTheGraph",
+			Handler:    _GameRequest_GetLastFiveGameHistoryByDiscordIdFromTheGraph_Handler,
 		},
 		{
 			MethodName: "SendCallbackMessage",

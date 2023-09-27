@@ -3,16 +3,22 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	myGraphql "gangbu/graphql"
 	"gangbu/pkg/models"
 	"gangbu/pkg/queue"
 	"gangbu/pkg/util"
 	"gangbu/proto/game"
 	"github.com/segmentio/kafka-go"
-	codes "google.golang.org/grpc/codes"
+	"github.com/shurcooL/graphql"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	"os"
+	"strconv"
+	"time"
 )
 
 type gameServer struct {
@@ -77,6 +83,59 @@ func (g *gameServer) GetLastFiveGameHistoryByDiscordId(ctx context.Context, disc
 			GameResult: history.GameResult,
 			BetValue:   history.BetValue,
 			FinishTime: timestamppb.New(*history.FinishTime),
+		}
+		resultHistoryDto = append(resultHistoryDto, dto)
+	}
+	result := &game.GameHistoryDtoSlice{Histories: resultHistoryDto}
+	return result, nil
+}
+
+func (g *gameServer) GetLastFiveGameHistoryByDiscordIdFromTheGraph(ctx context.Context, discordId *wrapperspb.StringValue) (*game.GameHistoryDtoSlice, error) {
+	player, err := g.pUsecase.GetByDiscordUserID(discordId.GetValue())
+	if err != nil {
+		util.Logger.Error("查询玩家信息失败!", err)
+		return nil, status.Errorf(codes.Internal, "query gamer failed!")
+	}
+	client := graphql.NewClient(os.Getenv("GRAPH_ENDPOINT_DEV"), nil)
+	queryer := myGraphql.NewQueryer(client)
+	var query struct {
+		BetResults []struct {
+			Id             graphql.String
+			Amount         graphql.String
+			RequestId      graphql.String
+			CallerAddress  graphql.String
+			GameResult     graphql.Boolean
+			BlockTimestamp graphql.String
+		} `graphql:"betResults(first:5 where: {callerAddress: $addr})"`
+	}
+	vars := map[string]any{
+		"addr": player.WalletAddress,
+	}
+	err = queryer.Query(context.Background(), &query, vars)
+	if err != nil {
+		util.Logger.Error("从the graph获取最近5条游戏记录失败!", err)
+		return nil, status.Errorf(codes.Internal, "get data from the graph failed!")
+	}
+	var resultHistoryDto []*game.GameHistoryDto
+
+	for _, history := range query.BetResults {
+		betValue, err := strconv.ParseInt(string(history.Amount), 10, 64)
+		if err != nil {
+			util.Logger.Error("转换int失败!", err)
+			return nil, status.Error(codes.Internal, "parse int failed!")
+		}
+		// 将字符串转换为整数类型
+		timestamp, err := strconv.ParseInt(string(history.BlockTimestamp), 10, 64)
+		if err != nil {
+			fmt.Println("解析时间戳失败:", err)
+			return nil, status.Error(codes.Internal, "parse timestamp failed!")
+		}
+		// 使用 time.Unix 将时间戳转换为 time.Time
+		timestampTime := time.Unix(timestamp, 0)
+		dto := &game.GameHistoryDto{
+			GameResult: bool(history.GameResult),
+			BetValue:   betValue,
+			FinishTime: timestamppb.New(timestampTime),
 		}
 		resultHistoryDto = append(resultHistoryDto, dto)
 	}

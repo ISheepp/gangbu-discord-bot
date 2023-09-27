@@ -19,7 +19,7 @@ import (
 func main() {
 	// start grpc server
 	wg := &sync.WaitGroup{}
-	ticker := time.NewTicker(4 * time.Second)
+	ticker := time.NewTicker(4 * time.Hour)
 	wg.Add(1)
 	go RunGrpcServer(wg)
 	go bot.Run(wg)

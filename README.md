@@ -36,9 +36,15 @@
 google/protobuf/wrappers.proto，空类型google/protobuf/empty.proto
 2. 生成pb.go文件，其中game.pb.go文件包含了message的类型，game_grpc_pb.go包含了rpc方法的定义，服务端需要实现此方法，客户端使用其中的接口方法
 
-## warning
+## discord相关
 
 discord slash command 只有3s的时间给后端响应
+
+## the graph相关
+
+索引速度太慢了，块高度跟不上，也可能是因为还没有索引器
+
+[参考](https://thegraph.com/blog/improve-subgraph-performance-reduce-eth-calls/)
 
 ## question
 

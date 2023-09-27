@@ -66,7 +66,7 @@ func startGrpcServer(wg *sync.WaitGroup, grs game.GameRequestServer, prs player.
 
 func registryToRedis() {
 	client := cache.NewRedisCache()
-	err := client.SetString(context.Background(), os.Getenv("GRPC_NAME"), os.Getenv("GRPC_ADDR"), 5*time.Second)
+	err := client.SetString(context.Background(), os.Getenv("GRPC_NAME"), os.Getenv("GRPC_ADDR"), 5*time.Hour)
 	if err != nil {
 		util.Logger.Errorf("registry to redis error: %v", err)
 		return
@@ -91,7 +91,7 @@ func ListenRenewChan(ticker *time.Ticker, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-ticker.C:
-			err := client.SetString(context.Background(), os.Getenv("GRPC_NAME"), os.Getenv("GRPC_ADDR"), 5*time.Second)
+			err := client.SetString(context.Background(), os.Getenv("GRPC_NAME"), os.Getenv("GRPC_ADDR"), 5*time.Hour)
 			if err != nil {
 				util.Logger.Error("续约失败:", err)
 			}

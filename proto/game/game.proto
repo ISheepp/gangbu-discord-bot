@@ -12,6 +12,8 @@ service GameRequest {
   rpc CreateGame(GameCreateBo) returns(google.protobuf.StringValue){}
   // 获取最近5条游戏记录
   rpc GetLastFiveGameHistoryByDiscordId(google.protobuf.StringValue) returns(GameHistoryDtoSlice){}
+  // 从the graph获取最近5条游戏记录
+  rpc GetLastFiveGameHistoryByDiscordIdFromTheGraph(google.protobuf.StringValue) returns(GameHistoryDtoSlice){}
   // 发送消息
   rpc SendCallbackMessage(CallbackMessage) returns(google.protobuf.Empty){}
 }
