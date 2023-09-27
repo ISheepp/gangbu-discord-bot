@@ -24,7 +24,12 @@ contract EvenOddGame is VRFConsumerBaseV2, ConfirmedOwner {
 
     event RequestSent(uint256 requestId, address caller);
     event RequestFulfilled(uint256 requestId, uint256[] randomWords);
-    event BetResult(uint256 requestId, address callerAddress, bool gameResult);
+    event BetResult(
+        uint256 requestId,
+        uint256 amount,
+        address callerAddress,
+        bool gameResult
+    );
     struct Bet {
         bool fulfilled; // whether the request has been successfully fulfilled
         bool exists; // whether a requestId exists
@@ -130,7 +135,7 @@ contract EvenOddGame is VRFConsumerBaseV2, ConfirmedOwner {
             sendReward(bet.callerAddress, winnings);
         }
         bet.gameStatus = GameState.Finished;
-        emit BetResult(_requestId, bet.callerAddress, isGuessCorrect);
+        emit BetResult(_requestId, bet.amount, bet.callerAddress, isGuessCorrect);
         return isGuessCorrect;
     }
 
