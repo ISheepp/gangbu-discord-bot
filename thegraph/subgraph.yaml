@@ -6,9 +6,9 @@ dataSources:
     name: EvenOddGame
     network: goerli
     source:
-      address: "0x6BbcceCe69C3D496DfF9fB7F065822e1e6207d93"
+      address: "0x61176B01F9dE8640C59e1ee364f27Abe4FfEdD46"
       abi: EvenOddGame
-      startBlock: 9612381
+      startBlock: 9765893
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -23,7 +23,7 @@ dataSources:
         - name: EvenOddGame
           file: ./abis/EvenOddGame.json
       eventHandlers:
-        - event: BetResult(uint256,address,bool)
+        - event: BetResult(uint256,uint256,address,bool)
           handler: handleBetResult
         - event: OwnershipTransferRequested(indexed address,indexed address)
           handler: handleOwnershipTransferRequested

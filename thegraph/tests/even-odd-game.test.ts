@@ -18,12 +18,14 @@ import { createBetResultEvent } from "./even-odd-game-utils"
 describe("Describe entity assertions", () => {
   beforeAll(() => {
     let requestId = BigInt.fromI32(234)
+    let amount = BigInt.fromI32(234)
     let callerAddress = Address.fromString(
       "0x0000000000000000000000000000000000000001"
     )
     let gameResult = "boolean Not implemented"
     let newBetResultEvent = createBetResultEvent(
       requestId,
+      amount,
       callerAddress,
       gameResult
     )
@@ -45,6 +47,12 @@ describe("Describe entity assertions", () => {
       "BetResult",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
       "requestId",
+      "234"
+    )
+    assert.fieldEquals(
+      "BetResult",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
+      "amount",
       "234"
     )
     assert.fieldEquals(

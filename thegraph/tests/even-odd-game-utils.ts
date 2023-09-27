@@ -10,6 +10,7 @@ import {
 
 export function createBetResultEvent(
   requestId: BigInt,
+  amount: BigInt,
   callerAddress: Address,
   gameResult: boolean
 ): BetResult {
@@ -22,6 +23,9 @@ export function createBetResultEvent(
       "requestId",
       ethereum.Value.fromUnsignedBigInt(requestId)
     )
+  )
+  betResultEvent.parameters.push(
+    new ethereum.EventParam("amount", ethereum.Value.fromUnsignedBigInt(amount))
   )
   betResultEvent.parameters.push(
     new ethereum.EventParam(

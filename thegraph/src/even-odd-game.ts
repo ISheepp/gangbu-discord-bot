@@ -18,6 +18,7 @@ export function handleBetResult(event: BetResultEvent): void {
     event.transaction.hash.concatI32(event.logIndex.toI32())
   )
   entity.requestId = event.params.requestId
+  entity.amount = event.params.amount
   entity.callerAddress = event.params.callerAddress
   entity.gameResult = event.params.gameResult
 

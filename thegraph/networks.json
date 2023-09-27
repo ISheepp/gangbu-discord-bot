@@ -1,8 +1,8 @@
 {
   "goerli": {
     "EvenOddGame": {
-      "address": "0x6BbcceCe69C3D496DfF9fB7F065822e1e6207d93",
-      "startBlock": 9612381
+      "address": "0x61176B01F9dE8640C59e1ee364f27Abe4FfEdD46",
+      "startBlock": 9765893
     }
   }
 }

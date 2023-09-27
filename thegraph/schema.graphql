@@ -1,6 +1,7 @@
 type BetResult @entity(immutable: true) {
   id: Bytes!
   requestId: BigInt! # uint256
+  amount: BigInt! # uint256
   callerAddress: Bytes! # address
   gameResult: Boolean! # bool
   blockNumber: BigInt!

@@ -1,13 +1,13 @@
 {
-  "name": "gangbu",
+  "name": "oddeven",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ gangbu",
-    "create-local": "graph create --node http://localhost:8020/ gangbu",
-    "remove-local": "graph remove --node http://localhost:8020/ gangbu",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 gangbu",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ oddeven",
+    "create-local": "graph create --node http://localhost:8020/ oddeven",
+    "remove-local": "graph remove --node http://localhost:8020/ oddeven",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 oddeven",
     "test": "graph test"
   },
   "dependencies": {
