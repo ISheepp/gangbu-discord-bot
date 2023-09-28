@@ -106,7 +106,7 @@ func (g *gameServer) GetLastFiveGameHistoryByDiscordIdFromTheGraph(ctx context.C
 			CallerAddress  graphql.String
 			GameResult     graphql.Boolean
 			BlockTimestamp graphql.String
-		} `graphql:"betResults(first:5 where: {callerAddress: $addr})"`
+		} `graphql:"betResults(first:5 where: {callerAddress: $addr} orderBy: blockTimestamp orderDirection: desc)"`
 	}
 	vars := map[string]any{
 		"addr": player.WalletAddress,
