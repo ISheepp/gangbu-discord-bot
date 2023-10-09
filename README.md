@@ -2,6 +2,10 @@
 
 깐부: 类似 Squid 里的猜单双游戏
 
+## demo
+
+
+
 ## discord commands
 
 + /play : 进行游戏
@@ -17,6 +21,7 @@
 
 ## 设计
 
+![arch.png](arch.png)
 
 ## 开发时遇到的问题
 
@@ -41,6 +46,8 @@ google/protobuf/wrappers.proto，空类型google/protobuf/empty.proto
 discord slash command 只有3s的时间给后端响应
 
 ## the graph相关
+
+the graph 无法索引合约状态变量，只能索引event
 
 索引速度太慢了，块高度跟不上，也可能是因为还没有索引器
 
