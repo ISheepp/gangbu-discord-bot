@@ -4,7 +4,7 @@
 
 ## demo
 
-
+https://github.com/ISheepp/gangbu-discord-bot/assets/54968314/3c487648-26a2-44ee-a360-ad33c57bb692
 
 ## discord commands
 
