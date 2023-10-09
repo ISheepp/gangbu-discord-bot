@@ -21,7 +21,33 @@ https://github.com/ISheepp/gangbu-discord-bot/assets/54968314/3c487648-26a2-44ee
 
 ## 设计
 
-![arch.png](arch.png)
+![arch.png](img/arch.png)
+
+
+### 合约
+
+主要提供了两个public函数
+
+1. requestRandomWords: 接收amount数量的ETH，调用Chainlink VRF合约的requestRandomWords函数申请随机数，生成完毕后由fulfillRandomWords函数完成回调。
+2. mainBet: 根据玩家选择的odd/even和生成的随机数来比对，如果成功则向玩家发送两倍amount的ETH，失败则不进行操作，记录一次游戏的事件。
+
+### 后端
+
+![main.png](img/main.png)
+
+提供gRPC方法供client端调用, server通过redis作为注册中心，kafka作为事件通知消息中间件，the graph作为查询游戏结果的去中心化索引器
+
+主流程为：
+
+1. 调用合约申请随机数函数
+2. 监听VRF合约的生成随机数完成event，获取到requestId
+3. 调用合约mainBet函数
+4. 完成后将游戏结果推送至kafka topic
+5. 由kafka reader来监听游戏历史topic，推送本次游戏完成信息到discord
+
+### discord
+
+从redis获取到gRPC server的地址，调用后端方法，通过接收对应的slash command来返回信息(InteractionResponseChannelMessageWithSource，也就是只返回给执行命令的人)
 
 ## 开发时遇到的问题
 
