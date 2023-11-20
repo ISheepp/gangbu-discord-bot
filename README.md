@@ -2,6 +2,8 @@
 
 깐부: 类似 Squid 里的猜单双游戏
 
+[邀请到您的服务器](https://discord.com/api/oauth2/authorize?client_id=1140967812983160932&permissions=2147485696&scope=bot)
+
 ## demo
 
 https://github.com/ISheepp/gangbu-discord-bot/assets/54968314/3c487648-26a2-44ee-a360-ad33c57bb692
